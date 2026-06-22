@@ -10,23 +10,19 @@ function Stars({ rating }) {
 function ChaptersDisplay({ fanfic }) {
   const { chapters, totalChapters, totalChaptersUnknown } = fanfic;
   if (!chapters && !totalChapters && !totalChaptersUnknown) return null;
-
   const total = totalChaptersUnknown ? '?' : (totalChapters || '?');
   const text = chapters && (totalChapters || totalChaptersUnknown)
     ? `${chapters}/${total} cap.`
     : chapters ? `${chapters} cap.`
     : `/${total} cap.`;
-
   return <span className="card-meta-item">📖 {text}</span>;
 }
 
-export default function FanficCard({ fanfic, onEdit, onDelete, onMarkRead, onStartReading, onMarkWant }) {
+export default function FanficCard({ fanfic, onEdit, onDelete, onMarkRead, onStartReading, onMarkWant, onAuthorClick }) {
   const spineClass = fanfic.site === 'ao3' ? 'spine-ao3'
     : fanfic.site === 'wattpad' ? 'spine-wattpad' : 'spine-other';
-
   const siteBadgeClass = fanfic.site === 'ao3' ? 'badge-ao3'
     : fanfic.site === 'wattpad' ? 'badge-wattpad' : 'badge-other';
-
   const siteLabel = fanfic.site === 'ao3' ? 'AO3'
     : fanfic.site === 'wattpad' ? 'Wattpad' : 'Outro';
 
@@ -48,7 +44,14 @@ export default function FanficCard({ fanfic, onEdit, onDelete, onMarkRead, onSta
           </div>
         </div>
 
-        {fanfic.author && <p className="card-author">por <span>{fanfic.author}</span></p>}
+        {fanfic.author && (
+          <p className="card-author">
+            por{' '}
+            <button className="author-link" onClick={() => onAuthorClick(fanfic.author)}>
+              {fanfic.author}
+            </button>
+          </p>
+        )}
 
         {fanfic.series && (
           <p className="card-series">
