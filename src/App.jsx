@@ -5,7 +5,6 @@ import FanficCard from './components/FanficCard';
 import FanficModal from './components/FanficModal';
 import MarkReadModal from './components/MarkReadModal';
 import AuthorModal from './components/AuthorModal';
-import AuthorModal from './components/AuthorModal';
 import './styles/main.css';
 
 function GoogleIcon() {
@@ -34,7 +33,6 @@ export default function App() {
 
   const sorted = (list) => [...list].sort((a, b) => (a.title || '').localeCompare(b.title || '', 'pt-BR'));
 
-  // Global search across all tabs
   const globalResults = useMemo(() => {
     const q = globalSearch.trim().toLowerCase();
     if (!q) return [];
@@ -131,7 +129,6 @@ export default function App() {
         </div>
       </header>
 
-      {/* Global search results panel */}
       {isGlobalSearching && (
         <div className="global-results-panel">
           <div className="global-results-header">
@@ -252,14 +249,14 @@ export default function App() {
         />
       )}
       {modal?.type === 'markRead' && (
+        <MarkReadModal fanfic={modal.fanfic} onConfirm={handleMarkRead} onClose={() => setModal(null)} />
+      )}
       {authorFilter && (
         <AuthorModal
           author={authorFilter}
           fanfics={fanfics.filter(f => f.author?.toLowerCase() === authorFilter.toLowerCase())}
           onClose={() => setAuthorFilter(null)}
         />
-      )}
-        <MarkReadModal fanfic={modal.fanfic} onConfirm={handleMarkRead} onClose={() => setModal(null)} />
       )}
     </div>
   );
