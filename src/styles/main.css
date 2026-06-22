@@ -584,3 +584,84 @@ body {
 @media (max-width: 640px) {
   .topbar-center { display: none; }
 }
+
+/* ── AUTHOR MODAL ── */
+.modal-author { max-width: 560px; }
+
+.author-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+.author-modal-count { font-size: 0.82rem; color: var(--gray); }
+.author-modal-close {
+  background: none; border: none;
+  color: var(--gray); font-size: 1rem;
+  cursor: pointer; padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.15s;
+}
+.author-modal-close:hover { color: var(--cream); background: rgba(255,255,255,0.06); }
+
+.author-section { margin-bottom: 20px; }
+.author-section-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--gray-light);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.author-fic-list { display: flex; flex-direction: column; gap: 6px; }
+.author-fic-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.04);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.author-fic-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.card-spine-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.card-spine-dot.spine-ao3 { background: var(--rose); }
+.card-spine-dot.spine-wattpad { background: var(--blue); }
+.card-spine-dot.spine-other { background: var(--lilac); }
+
+.author-fic-title {
+  font-size: 0.9rem;
+  color: var(--cream);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+.author-fic-title a { color: inherit; text-decoration: none; }
+.author-fic-title a:hover { color: var(--lilac); }
+.author-fic-series { font-size: 0.75rem; color: var(--lilac); margin-top: 2px; font-style: italic; }
+.author-fic-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+.author-fic-rating { display: flex; align-items: center; gap: 4px; font-size: 0.78rem; }
+
+/* ── AUTHOR LINK IN CARD ── */
+.author-link {
+  background: none;
+  border: none;
+  color: var(--lilac);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  transition: color 0.15s;
+}
+.author-link:hover { color: var(--lilac-dark); }
