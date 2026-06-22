@@ -4,6 +4,8 @@ import { useFanfics } from './hooks/useFanfics';
 import FanficCard from './components/FanficCard';
 import FanficModal from './components/FanficModal';
 import MarkReadModal from './components/MarkReadModal';
+import AuthorModal from './components/AuthorModal';
+import AuthorModal from './components/AuthorModal';
 import './styles/main.css';
 
 function GoogleIcon() {
@@ -28,6 +30,7 @@ export default function App() {
   const [search, setSearch] = useState('');
   const [globalSearch, setGlobalSearch] = useState('');
   const [modal, setModal] = useState(null);
+  const [authorFilter, setAuthorFilter] = useState(null);
 
   const sorted = (list) => [...list].sort((a, b) => (a.title || '').localeCompare(b.title || '', 'pt-BR'));
 
@@ -225,6 +228,7 @@ export default function App() {
                 onMarkRead={fanfic => setModal({ type: 'markRead', fanfic })}
                 onStartReading={async (fanfic) => await updateFanfic(fanfic.id, { status: 'reading' })}
                 onMarkWant={async (fanfic) => await updateFanfic(fanfic.id, { status: 'want' })}
+                onAuthorClick={(name) => setAuthorFilter(name)}
               />
             ))}
           </div>
@@ -248,6 +252,13 @@ export default function App() {
         />
       )}
       {modal?.type === 'markRead' && (
+      {authorFilter && (
+        <AuthorModal
+          author={authorFilter}
+          fanfics={fanfics.filter(f => f.author?.toLowerCase() === authorFilter.toLowerCase())}
+          onClose={() => setAuthorFilter(null)}
+        />
+      )}
         <MarkReadModal fanfic={modal.fanfic} onConfirm={handleMarkRead} onClose={() => setModal(null)} />
       )}
     </div>
