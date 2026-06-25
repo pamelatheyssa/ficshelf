@@ -1,10 +1,6 @@
 function Stars({ rating }) {
   const full = Math.round(rating / 2);
-  return (
-    <span className="rating-stars">
-      {'★'.repeat(full)}{'☆'.repeat(5 - full)}
-    </span>
-  );
+  return <span className="rating-stars">{'★'.repeat(full)}{'☆'.repeat(5 - full)}</span>;
 }
 
 function ChaptersDisplay({ fanfic }) {
@@ -13,18 +9,22 @@ function ChaptersDisplay({ fanfic }) {
   const total = totalChaptersUnknown ? '?' : (totalChapters || '?');
   const text = chapters && (totalChapters || totalChaptersUnknown)
     ? `${chapters}/${total} cap.`
-    : chapters ? `${chapters} cap.`
-    : `/${total} cap.`;
+    : chapters ? `${chapters} cap.` : `/${total} cap.`;
   return <span className="card-meta-item">📖 {text}</span>;
 }
 
+function formatDate(dateStr) {
+  if (!dateStr) return null;
+  const [y, m, d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+
 export default function FanficCard({ fanfic, onEdit, onDelete, onMarkRead, onStartReading, onMarkWant, onAuthorClick }) {
-  const spineClass = fanfic.site === 'ao3' ? 'spine-ao3'
-    : fanfic.site === 'wattpad' ? 'spine-wattpad' : 'spine-other';
-  const siteBadgeClass = fanfic.site === 'ao3' ? 'badge-ao3'
-    : fanfic.site === 'wattpad' ? 'badge-wattpad' : 'badge-other';
-  const siteLabel = fanfic.site === 'ao3' ? 'AO3'
-    : fanfic.site === 'wattpad' ? 'Wattpad' : 'Outro';
+  const spineClass = fanfic.site === 'ao3' ? 'spine-ao3' : fanfic.site === 'wattpad' ? 'spine-wattpad' : 'spine-other';
+  const siteBadgeClass = fanfic.site === 'ao3' ? 'badge-ao3' : fanfic.site === 'wattpad' ? 'badge-wattpad' : 'badge-other';
+  const siteLabel = fanfic.site === 'ao3' ? 'AO3' : fanfic.site === 'wattpad' ? 'Wattpad' : 'Outro';
+
+  const readingHours = fanfic.wordCount ? (fanfic.wordCount / 2600 * 0.25).toFixed(1) : null;
 
   return (
     <div className="fanfic-card">
@@ -61,7 +61,19 @@ export default function FanficCard({ fanfic, onEdit, onDelete, onMarkRead, onSta
 
         <div className="card-meta">
           <ChaptersDisplay fanfic={fanfic} />
+          {fanfic.wordCount > 0 && (
+            <span className="card-meta-item">
+              ✍️ {Number(fanfic.wordCount).toLocaleString('pt-BR')} palavras
+            </span>
+          )}
         </div>
+
+        {(fanfic.readDate || readingHours) && (
+          <div className="card-read-info">
+            {fanfic.readDate && <span>📅 Lida em {formatDate(fanfic.readDate)}</span>}
+            {readingHours && <span>⏱ ~{readingHours}h de leitura</span>}
+          </div>
+        )}
 
         {fanfic.status === 'read' && fanfic.rating > 0 && (
           <div className="card-rating">
