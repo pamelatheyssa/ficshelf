@@ -665,3 +665,102 @@ body {
   transition: color 0.15s;
 }
 .author-link:hover { color: var(--lilac-dark); }
+
+/* ── WORD COUNT PREVIEW ── */
+.wordcount-preview {
+  background: rgba(96,165,250,0.1);
+  border: 1px solid rgba(96,165,250,0.25);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  color: var(--blue);
+  margin-top: -8px;
+  margin-bottom: 12px;
+}
+
+/* ── CARD READ INFO ── */
+.card-read-info {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  color: var(--gray-light);
+  margin-bottom: 8px;
+}
+
+/* ── STATS PANEL ── */
+.stats-panel {
+  max-width: 700px;
+  margin: 0 auto;
+}
+.stats-title {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--lilac);
+  margin-bottom: 24px;
+}
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.stat-card {
+  background: var(--navy-light);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  transition: all 0.2s;
+}
+.stat-card:hover { border-color: rgba(167,139,250,0.2); transform: translateY(-1px); }
+.stat-icon { font-size: 1.5rem; }
+.stat-value {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.stat-label { font-size: 0.75rem; color: var(--gray); }
+
+.stats-note {
+  font-size: 0.8rem;
+  color: var(--gray);
+  font-style: italic;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.stats-platforms {
+  background: var(--navy-light);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.platform-bar-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.82rem;
+  color: var(--gray-light);
+}
+.platform-bar-track {
+  height: 8px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.platform-bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+.fill-ao3 { background: linear-gradient(90deg, var(--rose-dark), var(--rose)); }
+.fill-wattpad { background: linear-gradient(90deg, var(--blue-dark), var(--blue)); }
