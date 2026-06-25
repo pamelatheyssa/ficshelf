@@ -1,10 +1,14 @@
 import { useState } from 'react';
+import { parseWordCount, formatWordCount, wordsToHours } from '../lib/wordCount';
 
 export default function MarkReadModal({ fanfic, onConfirm, onClose }) {
   const [rating, setRating] = useState(7);
   const [summary, setSummary] = useState('');
-  const [wordCount, setWordCount] = useState('');
+  const [wordInput, setWordInput] = useState('');
   const [readDate, setReadDate] = useState(new Date().toISOString().split('T')[0]);
+
+  const parsedWords = parseWordCount(wordInput);
+  const hours = wordsToHours(parsedWords);
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -22,16 +26,19 @@ export default function MarkReadModal({ fanfic, onConfirm, onClose }) {
           </div>
           <div className="form-group">
             <label className="form-label">Nº de palavras</label>
-            <input className="form-input" type="number" min="0" value={wordCount}
-              onChange={e => setWordCount(e.target.value)} placeholder="ex: 45000" />
+            <input className="form-input" value={wordInput}
+              onChange={e => setWordInput(e.target.value)}
+              placeholder="ex: 17,162 ou 17.162" />
           </div>
         </div>
 
-        {wordCount && Number(wordCount) > 0 && (
+        {parsedWords > 0 && (
           <div className="wordcount-preview">
-            📖 {Number(wordCount).toLocaleString('pt-BR')} palavras ≈{' '}
-            <strong>{(Number(wordCount) / 2600 * 0.25).toFixed(1)}h</strong> de leitura
+            📖 {formatWordCount(parsedWords)} palavras ≈ <strong>~{hours}h</strong> de leitura
           </div>
+        )}
+        {wordInput && !parsedWords && (
+          <div className="wordcount-error">⚠️ Valor inválido — tente: 17162, 17.162 ou 17,162</div>
         )}
 
         <div className="form-group">
@@ -52,7 +59,7 @@ export default function MarkReadModal({ fanfic, onConfirm, onClose }) {
 
         <div className="modal-actions">
           <button className="btn-cancel" onClick={onClose}>Cancelar</button>
-          <button className="btn-save" onClick={() => onConfirm(rating, summary, wordCount, readDate)}>
+          <button className="btn-save" onClick={() => onConfirm(rating, summary, parsedWords, readDate)}>
             Marcar como lida
           </button>
         </div>

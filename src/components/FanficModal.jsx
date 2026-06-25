@@ -1,17 +1,25 @@
 import { useState, useMemo } from 'react';
+import { parseWordCount, formatWordCount, wordsToHours } from '../lib/wordCount';
 
 const EMPTY = {
   title: '', author: '', series: '', seriesPart: '',
   chapters: '', totalChapters: '', totalChaptersUnknown: false,
   link: '', site: 'ao3', complete: false, status: 'want',
-  rating: 0, summary: '', wordCount: '', readDate: '',
+  rating: 0, summary: '', wordCount: null, readDate: '',
 };
 
 const STATUS_LABEL = { want: 'Quero ler', reading: 'Lendo', read: 'Lida' };
 
 export default function FanficModal({ fanfic, allFanfics = [], onSave, onClose, defaultStatus }) {
-  const [form, setForm] = useState(fanfic ? { ...fanfic } : { ...EMPTY, status: defaultStatus || 'want' });
+  const [form, setForm] = useState(fanfic
+    ? { ...fanfic, wordInput: fanfic.wordCount ? formatWordCount(fanfic.wordCount) : '' }
+    : { ...EMPTY, status: defaultStatus || 'want', wordInput: '' }
+  );
+
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
+
+  const parsedWords = parseWordCount(form.wordInput);
+  const hours = wordsToHours(parsedWords);
 
   const duplicates = useMemo(() => {
     const q = form.title.trim().toLowerCase();
@@ -21,7 +29,8 @@ export default function FanficModal({ fanfic, allFanfics = [], onSave, onClose, 
 
   const handleSave = () => {
     if (!form.title.trim()) return alert('Informe o nome da fanfic!');
-    onSave({ ...form, wordCount: form.wordCount ? Number(form.wordCount) : null });
+    const { wordInput, ...rest } = form;
+    onSave({ ...rest, wordCount: parsedWords || null });
   };
 
   return (
@@ -132,14 +141,18 @@ export default function FanficModal({ fanfic, allFanfics = [], onSave, onClose, 
               </div>
               <div className="form-group">
                 <label className="form-label">Nº de palavras</label>
-                <input className="form-input" type="number" min="0" value={form.wordCount || ''}
-                  onChange={e => set('wordCount', e.target.value)} placeholder="ex: 45000" />
+                <input className="form-input" value={form.wordInput || ''}
+                  onChange={e => set('wordInput', e.target.value)}
+                  placeholder="ex: 17,162 ou 17.162" />
               </div>
             </div>
-            {form.wordCount && Number(form.wordCount) > 0 && (
+            {parsedWords > 0 && (
               <div className="wordcount-preview">
-                📖 {Number(form.wordCount).toLocaleString('pt-BR')} palavras ≈ <strong>{(Number(form.wordCount) / 2600 * 0.25).toFixed(1)}h</strong> de leitura
+                📖 {formatWordCount(parsedWords)} palavras ≈ <strong>~{hours}h</strong> de leitura
               </div>
+            )}
+            {form.wordInput && !parsedWords && (
+              <div className="wordcount-error">⚠️ Valor inválido — tente: 17162, 17.162 ou 17,162</div>
             )}
             <div className="form-group">
               <label className="form-label">Nota (1–10)</label>
