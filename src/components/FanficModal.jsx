@@ -4,28 +4,24 @@ const EMPTY = {
   title: '', author: '', series: '', seriesPart: '',
   chapters: '', totalChapters: '', totalChaptersUnknown: false,
   link: '', site: 'ao3', complete: false, status: 'want',
-  rating: 0, summary: '',
+  rating: 0, summary: '', wordCount: '', readDate: '',
 };
 
 const STATUS_LABEL = { want: 'Quero ler', reading: 'Lendo', read: 'Lida' };
 
 export default function FanficModal({ fanfic, allFanfics = [], onSave, onClose, defaultStatus }) {
   const [form, setForm] = useState(fanfic ? { ...fanfic } : { ...EMPTY, status: defaultStatus || 'want' });
-
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  // Duplicate detection: find fics with same title (ignoring self when editing)
   const duplicates = useMemo(() => {
     const q = form.title.trim().toLowerCase();
     if (!q) return [];
-    return allFanfics.filter(f =>
-      f.title?.toLowerCase() === q && f.id !== fanfic?.id
-    );
+    return allFanfics.filter(f => f.title?.toLowerCase() === q && f.id !== fanfic?.id);
   }, [form.title, allFanfics, fanfic?.id]);
 
   const handleSave = () => {
     if (!form.title.trim()) return alert('Informe o nome da fanfic!');
-    onSave(form);
+    onSave({ ...form, wordCount: form.wordCount ? Number(form.wordCount) : null });
   };
 
   return (
@@ -128,6 +124,23 @@ export default function FanficModal({ fanfic, allFanfics = [], onSave, onClose, 
 
         {form.status === 'read' && (
           <>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Data de conclusão</label>
+                <input className="form-input" type="date" value={form.readDate || ''}
+                  onChange={e => set('readDate', e.target.value)} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Nº de palavras</label>
+                <input className="form-input" type="number" min="0" value={form.wordCount || ''}
+                  onChange={e => set('wordCount', e.target.value)} placeholder="ex: 45000" />
+              </div>
+            </div>
+            {form.wordCount && Number(form.wordCount) > 0 && (
+              <div className="wordcount-preview">
+                📖 {Number(form.wordCount).toLocaleString('pt-BR')} palavras ≈ <strong>{(Number(form.wordCount) / 2600 * 0.25).toFixed(1)}h</strong> de leitura
+              </div>
+            )}
             <div className="form-group">
               <label className="form-label">Nota (1–10)</label>
               <div className="rating-input">
