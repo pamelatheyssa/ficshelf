@@ -764,3 +764,15 @@ body {
 }
 .fill-ao3 { background: linear-gradient(90deg, var(--rose-dark), var(--rose)); }
 .fill-wattpad { background: linear-gradient(90deg, var(--blue-dark), var(--blue)); }
+
+/* ── WORD COUNT ERROR ── */
+.wordcount-error {
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 0.82rem;
+  color: var(--danger);
+  margin-top: -8px;
+  margin-bottom: 12px;
+}
