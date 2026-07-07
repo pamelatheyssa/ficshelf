@@ -6,17 +6,45 @@ export default function MarkReadModal({ fanfic, onConfirm, onClose }) {
   const [summary, setSummary] = useState('');
   const [wordInput, setWordInput] = useState('');
   const [readDate, setReadDate] = useState(new Date().toISOString().split('T')[0]);
+  const [chapters, setChapters] = useState(fanfic.chapters || '');
+  const [totalChapters, setTotalChapters] = useState(fanfic.totalChapters || '');
+  const [totalChaptersUnknown, setTotalChaptersUnknown] = useState(fanfic.totalChaptersUnknown || false);
 
   const parsedWords = parseWordCount(wordInput);
   const hours = wordsToHours(parsedWords);
+
+  const currentChapText = fanfic.chapters
+    ? `${fanfic.chapters}/${fanfic.totalChaptersUnknown ? '?' : (fanfic.totalChapters || '?')}`
+    : null;
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="modal">
         <h2 className="modal-title">✨ Marcar como lida</h2>
         <p style={{ color: 'var(--gray-light)', marginBottom: 20, fontSize: '0.9rem' }}>
-          <strong style={{ color: 'var(--cream)' }}>{fanfic.title}</strong> vai para a aba Lidas.
+          <strong style={{ color: 'var(--cream)' }}>{fanfic.title}</strong>
         </p>
+
+        <div className="form-group">
+          <label className="form-label">
+            Atualizar capítulos
+            {currentChapText && <span style={{ color: 'var(--gray)', fontWeight: 400, marginLeft: 8 }}>(atual: {currentChapText})</span>}
+          </label>
+          <div className="chapters-row">
+            <input className="form-input" type="number" min="0" value={chapters}
+              onChange={e => setChapters(e.target.value)} placeholder="Lidos" />
+            <span style={{ color: 'var(--gray)', alignSelf: 'center', flexShrink: 0 }}>/</span>
+            <input className="form-input" type="number" min="0"
+              value={totalChaptersUnknown ? '' : totalChapters}
+              onChange={e => setTotalChapters(e.target.value)}
+              placeholder="Total" disabled={totalChaptersUnknown} />
+            <label className="unknown-check">
+              <input type="checkbox" checked={totalChaptersUnknown}
+                onChange={e => setTotalChaptersUnknown(e.target.checked)} />
+              <span>?</span>
+            </label>
+          </div>
+        </div>
 
         <div className="form-row">
           <div className="form-group">
@@ -27,8 +55,7 @@ export default function MarkReadModal({ fanfic, onConfirm, onClose }) {
           <div className="form-group">
             <label className="form-label">Nº de palavras</label>
             <input className="form-input" value={wordInput}
-              onChange={e => setWordInput(e.target.value)}
-              placeholder="ex: 17,162 ou 17.162" />
+              onChange={e => setWordInput(e.target.value)} placeholder="ex: 17,162" />
           </div>
         </div>
 
@@ -38,7 +65,7 @@ export default function MarkReadModal({ fanfic, onConfirm, onClose }) {
           </div>
         )}
         {wordInput && !parsedWords && (
-          <div className="wordcount-error">⚠️ Valor inválido — tente: 17162, 17.162 ou 17,162</div>
+          <div className="wordcount-error">⚠️ Tente: 17162, 17.162 ou 17,162</div>
         )}
 
         <div className="form-group">
@@ -59,9 +86,10 @@ export default function MarkReadModal({ fanfic, onConfirm, onClose }) {
 
         <div className="modal-actions">
           <button className="btn-cancel" onClick={onClose}>Cancelar</button>
-          <button className="btn-save" onClick={() => onConfirm(rating, summary, parsedWords, readDate)}>
-            Marcar como lida
-          </button>
+          <button className="btn-save" onClick={() => onConfirm(
+            rating, summary, parsedWords, readDate,
+            { chapters, totalChapters, totalChaptersUnknown }
+          )}>Marcar como lida</button>
         </div>
       </div>
     </div>

@@ -1,9 +1,10 @@
-const STATUS_LABEL = { want: 'Quero ler', reading: 'Lendo', read: 'Lida' };
-const STATUS_EMOJI = { want: '📋', reading: '📖', read: '✅' };
+const STATUS_LABEL = { want: 'Quero ler', reading: 'Lendo', read: 'Lida', skip: 'Não quero ler' };
+const STATUS_EMOJI = { want: '📋', reading: '📖', read: '✅', skip: '🚫' };
 
 function Stars({ rating }) {
+  if (!rating || rating <= 0) return null;
   const full = Math.round(rating / 2);
-  return <span className="rating-stars">{'★'.repeat(full)}{'☆'.repeat(5 - full)}</span>;
+  return <span className="rating-stars">{'★'.repeat(Math.max(0,full))}{'☆'.repeat(Math.max(0,5-full))}</span>;
 }
 
 export default function AuthorModal({ author, fanfics, onClose }) {
@@ -11,8 +12,8 @@ export default function AuthorModal({ author, fanfics, onClose }) {
     reading: fanfics.filter(f => f.status === 'reading'),
     want: fanfics.filter(f => f.status === 'want'),
     read: fanfics.filter(f => f.status === 'read'),
+    skip: fanfics.filter(f => f.status === 'skip'),
   };
-
   const sorted = (list) => [...list].sort((a, b) => (a.title || '').localeCompare(b.title || '', 'pt-BR'));
 
   return (
@@ -25,8 +26,7 @@ export default function AuthorModal({ author, fanfics, onClose }) {
           </div>
           <button className="author-modal-close" onClick={onClose}>✕</button>
         </div>
-
-        {['reading', 'want', 'read'].map(status => {
+        {['reading', 'want', 'read', 'skip'].map(status => {
           const list = sorted(byStatus[status]);
           if (list.length === 0) return null;
           return (
@@ -41,15 +41,10 @@ export default function AuthorModal({ author, fanfics, onClose }) {
                       <span className={`card-spine-dot spine-${f.site === 'ao3' ? 'ao3' : f.site === 'wattpad' ? 'wattpad' : 'other'}`} />
                       <div>
                         <p className="author-fic-title">
-                          {f.link
-                            ? <a href={f.link} target="_blank" rel="noopener noreferrer">{f.title}</a>
-                            : f.title}
+                          {f.favorite && <span style={{color:'var(--gold)'}}>★ </span>}
+                          {f.link ? <a href={f.link} target="_blank" rel="noopener noreferrer">{f.title}</a> : f.title}
                         </p>
-                        {f.series && (
-                          <p className="author-fic-series">
-                            📚 {f.series}{f.seriesPart ? ` — Parte ${f.seriesPart}` : ''}
-                          </p>
-                        )}
+                        {f.series && <p className="author-fic-series">📚 {f.series}{f.seriesPart ? ` — Parte ${f.seriesPart}` : ''}</p>}
                       </div>
                     </div>
                     <div className="author-fic-right">
@@ -68,7 +63,6 @@ export default function AuthorModal({ author, fanfics, onClose }) {
             </div>
           );
         })}
-
         <div className="modal-actions">
           <button className="btn-save" onClick={onClose}>Fechar</button>
         </div>

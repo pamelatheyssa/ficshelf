@@ -28,13 +28,16 @@ export function useFanfics(userId) {
   const deleteFanfic = (id) =>
     deleteDoc(doc(db, 'fanfics', id));
 
-  const markAsRead = (id, rating, summary, wordCount, readDate) =>
+  const markAsRead = (id, rating, summary, wordCount, readDate, chapData) =>
     updateDoc(doc(db, 'fanfics', id), {
       status: 'read',
       rating: rating || null,
       summary: summary || '',
       wordCount: wordCount ? Number(wordCount) : null,
       readDate: readDate || null,
+      chapters: chapData?.chapters || null,
+      totalChapters: chapData?.totalChapters || null,
+      totalChaptersUnknown: chapData?.totalChaptersUnknown || false,
       readAt: serverTimestamp(),
     });
 

@@ -6,6 +6,7 @@ import FanficModal from './components/FanficModal';
 import MarkReadModal from './components/MarkReadModal';
 import AuthorModal from './components/AuthorModal';
 import StatsPanel from './components/StatsPanel';
+import { fuzzyMatch } from './lib/ficUtils';
 import './styles/main.css';
 
 function GoogleIcon() {
@@ -19,7 +20,7 @@ function GoogleIcon() {
   );
 }
 
-const STATUS_LABEL = { want: 'Quero ler', reading: 'Lendo', read: 'Lida' };
+const STATUS_LABEL = { want: 'Quero ler', reading: 'Lendo', read: 'Lida', skip: 'Não quero ler' };
 
 export default function App() {
   const { user, loading: authLoading, login, logout } = useAuth();
@@ -34,40 +35,69 @@ export default function App() {
 
   const sorted = (list) => [...list].sort((a, b) => (a.title || '').localeCompare(b.title || '', 'pt-BR'));
 
+  // Build series incomplete map: seriesName -> has any incomplete fic
+  const seriesIncompleteMap = useMemo(() => {
+    const map = {};
+    fanfics.forEach(f => {
+      if (f.series) {
+        if (!f.complete) map[f.series.toLowerCase()] = true;
+      }
+    });
+    return map;
+  }, [fanfics]);
+
+  const enriched = useMemo(() =>
+    fanfics.map(f => ({
+      ...f,
+      _seriesHasIncomplete: f.series ? !!seriesIncompleteMap[f.series.toLowerCase()] : false,
+    })),
+    [fanfics, seriesIncompleteMap]
+  );
+
   const globalResults = useMemo(() => {
-    const q = globalSearch.trim().toLowerCase();
+    const q = globalSearch.trim();
     if (!q) return [];
-    return sorted(fanfics.filter(f =>
-      f.title?.toLowerCase().includes(q) ||
-      f.author?.toLowerCase().includes(q) ||
-      f.series?.toLowerCase().includes(q)
+    return sorted(enriched.filter(f =>
+      fuzzyMatch(f.title, q) ||
+      fuzzyMatch(f.author, q) ||
+      fuzzyMatch(f.series, q) ||
+      fuzzyMatch(f.miniSummary, q)
     ));
-  }, [fanfics, globalSearch]);
+  }, [enriched, globalSearch]);
 
   const filtered = useMemo(() => {
     if (activeTab === 'stats') return [];
-    let list = fanfics.filter(f => f.status === activeTab);
+    let list = enriched.filter(f => f.status === activeTab);
     if (activeTab === 'want') {
       if (subTab === 'complete') list = list.filter(f => f.complete);
       if (subTab === 'incomplete') list = list.filter(f => !f.complete);
+      if (subTab === 'fav') list = list.filter(f => f.favorite);
+    }
+    if (activeTab === 'read') {
+      if (subTab === 'fav') list = list.filter(f => f.favorite);
     }
     if (search.trim()) {
-      const q = search.toLowerCase();
+      const q = search.trim();
       list = list.filter(f =>
-        f.title?.toLowerCase().includes(q) ||
-        f.author?.toLowerCase().includes(q) ||
-        f.series?.toLowerCase().includes(q)
+        fuzzyMatch(f.title, q) ||
+        fuzzyMatch(f.author, q) ||
+        fuzzyMatch(f.series, q) ||
+        fuzzyMatch(f.miniSummary, q) ||
+        fuzzyMatch(f.summary, q)
       );
     }
     return sorted(list);
-  }, [fanfics, activeTab, subTab, search]);
+  }, [enriched, activeTab, subTab, search]);
 
   const counts = useMemo(() => ({
     want: fanfics.filter(f => f.status === 'want').length,
     reading: fanfics.filter(f => f.status === 'reading').length,
     read: fanfics.filter(f => f.status === 'read').length,
+    skip: fanfics.filter(f => f.status === 'skip').length,
     wantComplete: fanfics.filter(f => f.status === 'want' && f.complete).length,
     wantIncomplete: fanfics.filter(f => f.status === 'want' && !f.complete).length,
+    wantFav: fanfics.filter(f => f.status === 'want' && f.favorite).length,
+    readFav: fanfics.filter(f => f.status === 'read' && f.favorite).length,
   }), [fanfics]);
 
   if (authLoading) return <div className="loading">Carregando...</div>;
@@ -92,8 +122,8 @@ export default function App() {
     setModal(null);
   };
 
-  const handleMarkRead = async (rating, summary, wordCount, readDate) => {
-    await markAsRead(modal.fanfic.id, rating, summary, wordCount, readDate);
+  const handleMarkRead = async (rating, summary, wordCount, readDate, chapData) => {
+    await markAsRead(modal.fanfic.id, rating, summary, wordCount, readDate, chapData);
     setModal(null);
   };
 
@@ -110,12 +140,10 @@ export default function App() {
         <div className="topbar-center">
           <div className="global-search-wrap">
             <span className="global-search-icon">🔍</span>
-            <input
-              className="global-search-input"
+            <input className="global-search-input"
               placeholder="Buscar em todas as fics..."
               value={globalSearch}
-              onChange={e => setGlobalSearch(e.target.value)}
-            />
+              onChange={e => setGlobalSearch(e.target.value)} />
             {globalSearch && (
               <button className="global-search-clear" onClick={() => setGlobalSearch('')}>✕</button>
             )}
@@ -133,7 +161,7 @@ export default function App() {
           <div className="global-results-header">
             {globalResults.length === 0
               ? `Nenhuma fanfic encontrada para "${globalSearch}"`
-              : `${globalResults.length} fanfic${globalResults.length > 1 ? 's' : ''} encontrada${globalResults.length > 1 ? 's' : ''} em toda a estante`}
+              : `${globalResults.length} fanfic${globalResults.length > 1 ? 's' : ''} encontrada${globalResults.length > 1 ? 's' : ''}`}
           </div>
           {globalResults.length > 0 && (
             <div className="global-results-list">
@@ -141,11 +169,11 @@ export default function App() {
                 <div key={f.id} className="global-result-item">
                   <div className="global-result-info">
                     <span className="global-result-title">
-                      {f.link
-                        ? <a href={f.link} target="_blank" rel="noopener noreferrer">{f.title}</a>
-                        : f.title}
+                      {f.favorite && <span style={{color:'var(--gold)'}}>★ </span>}
+                      {f.link ? <a href={f.link} target="_blank" rel="noopener noreferrer">{f.title}</a> : f.title}
                     </span>
                     {f.author && <span className="global-result-author">por {f.author}</span>}
+                    {f.miniSummary && <span className="global-result-mini">{f.miniSummary}</span>}
                   </div>
                   <div className="global-result-tags">
                     <span className={`badge badge-${f.site === 'ao3' ? 'ao3' : f.site === 'wattpad' ? 'wattpad' : 'other'}`}>
@@ -161,22 +189,18 @@ export default function App() {
       )}
 
       <nav className="tabs-container">
-        <button className={`tab-btn ${activeTab === 'want' ? 'active' : ''}`}
-          onClick={() => { setActiveTab('want'); setSubTab('all'); }}>
-          Quero ler <span className="count">{counts.want}</span>
-        </button>
-        <button className={`tab-btn ${activeTab === 'reading' ? 'active' : ''}`}
-          onClick={() => setActiveTab('reading')}>
-          Lendo <span className="count">{counts.reading}</span>
-        </button>
-        <button className={`tab-btn ${activeTab === 'read' ? 'active' : ''}`}
-          onClick={() => setActiveTab('read')}>
-          Lidas <span className="count">{counts.read}</span>
-        </button>
-        <button className={`tab-btn ${activeTab === 'stats' ? 'active' : ''}`}
-          onClick={() => setActiveTab('stats')}>
-          📊 Perfil
-        </button>
+        {[
+          { key: 'want', label: 'Quero ler', count: counts.want },
+          { key: 'reading', label: 'Lendo', count: counts.reading },
+          { key: 'read', label: 'Lidas', count: counts.read },
+          { key: 'skip', label: 'Não quero ler', count: counts.skip },
+          { key: 'stats', label: '📊 Perfil', count: null },
+        ].map(t => (
+          <button key={t.key} className={`tab-btn ${activeTab === t.key ? 'active' : ''}`}
+            onClick={() => { setActiveTab(t.key); setSubTab('all'); }}>
+            {t.label} {t.count !== null && <span className="count">{t.count}</span>}
+          </button>
+        ))}
       </nav>
 
       <main className="main">
@@ -186,15 +210,16 @@ export default function App() {
           <>
             {activeTab === 'want' && (
               <div className="subtabs">
-                <button className={`subtab-btn ${subTab === 'all' ? 'active' : ''}`} onClick={() => setSubTab('all')}>
-                  Todas ({counts.want})
-                </button>
-                <button className={`subtab-btn ${subTab === 'complete' ? 'active' : ''}`} onClick={() => setSubTab('complete')}>
-                  ✅ Completas ({counts.wantComplete})
-                </button>
-                <button className={`subtab-btn ${subTab === 'incomplete' ? 'active' : ''}`} onClick={() => setSubTab('incomplete')}>
-                  🔄 Em andamento ({counts.wantIncomplete})
-                </button>
+                <button className={`subtab-btn ${subTab === 'all' ? 'active' : ''}`} onClick={() => setSubTab('all')}>Todas ({counts.want})</button>
+                <button className={`subtab-btn ${subTab === 'complete' ? 'active' : ''}`} onClick={() => setSubTab('complete')}>✅ Completas ({counts.wantComplete})</button>
+                <button className={`subtab-btn ${subTab === 'incomplete' ? 'active' : ''}`} onClick={() => setSubTab('incomplete')}>🔄 Em andamento ({counts.wantIncomplete})</button>
+                <button className={`subtab-btn ${subTab === 'fav' ? 'active' : ''}`} onClick={() => setSubTab('fav')}>★ Favoritas ({counts.wantFav})</button>
+              </div>
+            )}
+            {activeTab === 'read' && (
+              <div className="subtabs">
+                <button className={`subtab-btn ${subTab === 'all' ? 'active' : ''}`} onClick={() => setSubTab('all')}>Todas ({counts.read})</button>
+                <button className={`subtab-btn ${subTab === 'fav' ? 'active' : ''}`} onClick={() => setSubTab('fav')}>★ Favoritas ({counts.readFav})</button>
               </div>
             )}
 
@@ -204,7 +229,7 @@ export default function App() {
                   placeholder="Filtrar nesta aba..."
                   value={search} onChange={e => setSearch(e.target.value)} />
               </div>
-              <button className="add-btn" onClick={() => setModal({ type: 'add', defaultStatus: activeTab })}>
+              <button className="add-btn" onClick={() => setModal({ type: 'add', defaultStatus: activeTab === 'stats' ? 'want' : activeTab })}>
                 + Adicionar fanfic
               </button>
             </div>
@@ -218,6 +243,7 @@ export default function App() {
                   {search ? 'Nenhuma fanfic encontrada'
                     : activeTab === 'want' ? 'Sua lista está vazia'
                     : activeTab === 'reading' ? 'Nenhuma fic em andamento'
+                    : activeTab === 'skip' ? 'Nenhuma fic aqui'
                     : 'Nenhuma fanfic lida ainda'}
                 </h3>
                 <p className="empty-text">
