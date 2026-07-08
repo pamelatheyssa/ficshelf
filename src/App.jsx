@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useFanfics } from './hooks/useFanfics';
+import { useShelves } from './hooks/useShelves';
 import FanficCard from './components/FanficCard';
 import FanficModal from './components/FanficModal';
 import MarkReadModal from './components/MarkReadModal';
 import AuthorModal from './components/AuthorModal';
 import StatsPanel from './components/StatsPanel';
+import ShelvesModal from './components/ShelvesModal';
 import { fuzzyMatch } from './lib/ficUtils';
 import './styles/main.css';
 
@@ -25,32 +27,30 @@ const STATUS_LABEL = { want: 'Quero ler', reading: 'Lendo', read: 'Lida', skip: 
 export default function App() {
   const { user, loading: authLoading, login, logout } = useAuth();
   const { fanfics, loading, addFanfic, updateFanfic, deleteFanfic, markAsRead } = useFanfics(user?.uid);
+  const { shelves, addShelf, updateShelf, deleteShelf } = useShelves(user?.uid);
 
   const [activeTab, setActiveTab] = useState('want');
   const [subTab, setSubTab] = useState('all');
+  const [activeShelf, setActiveShelf] = useState(null);
   const [search, setSearch] = useState('');
+  const [summarySearch, setSummarySearch] = useState('');
   const [globalSearch, setGlobalSearch] = useState('');
+  const [tagFilter, setTagFilter] = useState('');
+  const [shipFilter, setShipFilter] = useState('');
   const [modal, setModal] = useState(null);
   const [authorFilter, setAuthorFilter] = useState(null);
+  const [showShelves, setShowShelves] = useState(false);
 
   const sorted = (list) => [...list].sort((a, b) => (a.title || '').localeCompare(b.title || '', 'pt-BR'));
 
-  // Build series incomplete map: seriesName -> has any incomplete fic
   const seriesIncompleteMap = useMemo(() => {
     const map = {};
-    fanfics.forEach(f => {
-      if (f.series) {
-        if (!f.complete) map[f.series.toLowerCase()] = true;
-      }
-    });
+    fanfics.forEach(f => { if (f.series && !f.complete) map[f.series.toLowerCase()] = true; });
     return map;
   }, [fanfics]);
 
   const enriched = useMemo(() =>
-    fanfics.map(f => ({
-      ...f,
-      _seriesHasIncomplete: f.series ? !!seriesIncompleteMap[f.series.toLowerCase()] : false,
-    })),
+    fanfics.map(f => ({ ...f, _seriesHasIncomplete: f.series ? !!seriesIncompleteMap[f.series.toLowerCase()] : false })),
     [fanfics, seriesIncompleteMap]
   );
 
@@ -58,36 +58,43 @@ export default function App() {
     const q = globalSearch.trim();
     if (!q) return [];
     return sorted(enriched.filter(f =>
-      fuzzyMatch(f.title, q) ||
-      fuzzyMatch(f.author, q) ||
-      fuzzyMatch(f.series, q) ||
-      fuzzyMatch(f.miniSummary, q)
+      fuzzyMatch(f.title, q) || fuzzyMatch(f.author, q) ||
+      fuzzyMatch(f.series, q) || fuzzyMatch(f.fandom, q) ||
+      f.ships?.some(s => fuzzyMatch(s, q)) || f.tags?.some(t => fuzzyMatch(t, q))
     ));
   }, [enriched, globalSearch]);
 
   const filtered = useMemo(() => {
     if (activeTab === 'stats') return [];
     let list = enriched.filter(f => f.status === activeTab);
+
     if (activeTab === 'want') {
       if (subTab === 'complete') list = list.filter(f => f.complete);
       if (subTab === 'incomplete') list = list.filter(f => !f.complete);
       if (subTab === 'fav') list = list.filter(f => f.favorite);
     }
-    if (activeTab === 'read') {
-      if (subTab === 'fav') list = list.filter(f => f.favorite);
-    }
+    if (activeTab === 'read' && subTab === 'fav') list = list.filter(f => f.favorite);
+
+    if (activeShelf) list = list.filter(f => (f.shelves || []).includes(activeShelf));
+    if (tagFilter) list = list.filter(f => f.tags?.some(t => fuzzyMatch(t, tagFilter)));
+    if (shipFilter) list = list.filter(f => f.ships?.some(s => fuzzyMatch(s, shipFilter)));
+
     if (search.trim()) {
       const q = search.trim();
       list = list.filter(f =>
-        fuzzyMatch(f.title, q) ||
-        fuzzyMatch(f.author, q) ||
-        fuzzyMatch(f.series, q) ||
-        fuzzyMatch(f.miniSummary, q) ||
-        fuzzyMatch(f.summary, q)
+        fuzzyMatch(f.title, q) || fuzzyMatch(f.author, q) ||
+        fuzzyMatch(f.series, q) || fuzzyMatch(f.fandom, q)
       );
     }
+    if (summarySearch.trim()) {
+      const q = summarySearch.trim();
+      list = list.filter(f =>
+        fuzzyMatch(f.miniSummary, q) || fuzzyMatch(f.summary, q) || fuzzyMatch(f.skipReason, q)
+      );
+    }
+
     return sorted(list);
-  }, [enriched, activeTab, subTab, search]);
+  }, [enriched, activeTab, subTab, activeShelf, search, summarySearch, tagFilter, shipFilter]);
 
   const counts = useMemo(() => ({
     want: fanfics.filter(f => f.status === 'want').length,
@@ -108,9 +115,7 @@ export default function App() {
         <div className="login-card">
           <div className="login-logo">📚 FicShelf</div>
           <p className="login-tagline">Sua estante particular de fanfics</p>
-          <button className="login-btn" onClick={login}>
-            <GoogleIcon /> Entrar com Google
-          </button>
+          <button className="login-btn" onClick={login}><GoogleIcon /> Entrar com Google</button>
         </div>
       </div>
     );
@@ -131,6 +136,8 @@ export default function App() {
     if (window.confirm('Remover esta fanfic?')) await deleteFanfic(id);
   };
 
+  const clearFilters = () => { setTagFilter(''); setShipFilter(''); setActiveShelf(null); };
+  const hasActiveFilter = tagFilter || shipFilter || activeShelf;
   const isGlobalSearching = globalSearch.trim().length > 0;
 
   return (
@@ -141,15 +148,13 @@ export default function App() {
           <div className="global-search-wrap">
             <span className="global-search-icon">🔍</span>
             <input className="global-search-input"
-              placeholder="Buscar em todas as fics..."
-              value={globalSearch}
-              onChange={e => setGlobalSearch(e.target.value)} />
-            {globalSearch && (
-              <button className="global-search-clear" onClick={() => setGlobalSearch('')}>✕</button>
-            )}
+              placeholder="Buscar título, autor, tag, ship..."
+              value={globalSearch} onChange={e => setGlobalSearch(e.target.value)} />
+            {globalSearch && <button className="global-search-clear" onClick={() => setGlobalSearch('')}>✕</button>}
           </div>
         </div>
         <div className="topbar-right">
+          <button className="shelf-mgr-btn" onClick={() => setShowShelves(true)} title="Gerenciar Shelves">🗂️</button>
           {user.photoURL && <img className="user-avatar" src={user.photoURL} alt="" />}
           <span className="user-name">{user.displayName?.split(' ')[0]}</span>
           <button className="logout-btn" onClick={logout}>Sair</button>
@@ -169,11 +174,16 @@ export default function App() {
                 <div key={f.id} className="global-result-item">
                   <div className="global-result-info">
                     <span className="global-result-title">
-                      {f.favorite && <span style={{color:'var(--gold)'}}>★ </span>}
+                      {f.favorite && <span style={{ color: 'var(--gold)' }}>★ </span>}
                       {f.link ? <a href={f.link} target="_blank" rel="noopener noreferrer">{f.title}</a> : f.title}
                     </span>
-                    {f.author && <span className="global-result-author">por {f.author}</span>}
-                    {f.miniSummary && <span className="global-result-mini">{f.miniSummary}</span>}
+                    {f.author && (
+                      <button className="global-result-author-btn"
+                        onClick={() => { setGlobalSearch(''); setAuthorFilter(f.author); }}>
+                        por {f.author}
+                      </button>
+                    )}
+                    {f.fandom && <span className="global-result-mini">🎭 {f.fandom}</span>}
                   </div>
                   <div className="global-result-tags">
                     <span className={`badge badge-${f.site === 'ao3' ? 'ao3' : f.site === 'wattpad' ? 'wattpad' : 'other'}`}>
@@ -197,7 +207,7 @@ export default function App() {
           { key: 'stats', label: '📊 Perfil', count: null },
         ].map(t => (
           <button key={t.key} className={`tab-btn ${activeTab === t.key ? 'active' : ''}`}
-            onClick={() => { setActiveTab(t.key); setSubTab('all'); }}>
+            onClick={() => { setActiveTab(t.key); setSubTab('all'); setSearch(''); setSummarySearch(''); clearFilters(); }}>
             {t.label} {t.count !== null && <span className="count">{t.count}</span>}
           </button>
         ))}
@@ -205,86 +215,145 @@ export default function App() {
 
       <main className="main">
         {activeTab === 'stats' ? (
-          <StatsPanel fanfics={fanfics} />
+          <StatsPanel fanfics={fanfics} shelves={shelves} />
         ) : (
-          <>
-            {activeTab === 'want' && (
-              <div className="subtabs">
-                <button className={`subtab-btn ${subTab === 'all' ? 'active' : ''}`} onClick={() => setSubTab('all')}>Todas ({counts.want})</button>
-                <button className={`subtab-btn ${subTab === 'complete' ? 'active' : ''}`} onClick={() => setSubTab('complete')}>✅ Completas ({counts.wantComplete})</button>
-                <button className={`subtab-btn ${subTab === 'incomplete' ? 'active' : ''}`} onClick={() => setSubTab('incomplete')}>🔄 Em andamento ({counts.wantIncomplete})</button>
-                <button className={`subtab-btn ${subTab === 'fav' ? 'active' : ''}`} onClick={() => setSubTab('fav')}>★ Favoritas ({counts.wantFav})</button>
-              </div>
-            )}
-            {activeTab === 'read' && (
-              <div className="subtabs">
-                <button className={`subtab-btn ${subTab === 'all' ? 'active' : ''}`} onClick={() => setSubTab('all')}>Todas ({counts.read})</button>
-                <button className={`subtab-btn ${subTab === 'fav' ? 'active' : ''}`} onClick={() => setSubTab('fav')}>★ Favoritas ({counts.readFav})</button>
-              </div>
-            )}
-
-            <div className="toolbar">
-              <div className="toolbar-left">
-                <input className="search-input"
-                  placeholder="Filtrar nesta aba..."
-                  value={search} onChange={e => setSearch(e.target.value)} />
-              </div>
-              <button className="add-btn" onClick={() => setModal({ type: 'add', defaultStatus: activeTab === 'stats' ? 'want' : activeTab })}>
-                + Adicionar fanfic
-              </button>
-            </div>
-
-            {loading ? (
-              <div style={{ textAlign: 'center', padding: 40, color: 'var(--gray)' }}>Carregando...</div>
-            ) : filtered.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-icon">📖</div>
-                <h3 className="empty-title">
-                  {search ? 'Nenhuma fanfic encontrada'
-                    : activeTab === 'want' ? 'Sua lista está vazia'
-                    : activeTab === 'reading' ? 'Nenhuma fic em andamento'
-                    : activeTab === 'skip' ? 'Nenhuma fic aqui'
-                    : 'Nenhuma fanfic lida ainda'}
-                </h3>
-                <p className="empty-text">
-                  {search ? 'Tente outro termo.' : 'Clique em "+ Adicionar fanfic" para começar!'}
-                </p>
-              </div>
-            ) : (
-              <div className="cards-grid">
-                {filtered.map(f => (
-                  <FanficCard key={f.id} fanfic={f}
-                    onEdit={fanfic => setModal({ type: 'edit', fanfic })}
-                    onDelete={handleDelete}
-                    onMarkRead={fanfic => setModal({ type: 'markRead', fanfic })}
-                    onStartReading={async (fanfic) => await updateFanfic(fanfic.id, { status: 'reading' })}
-                    onMarkWant={async (fanfic) => await updateFanfic(fanfic.id, { status: 'want' })}
-                    onAuthorClick={(name) => setAuthorFilter(name)}
-                  />
+          <div className="main-layout">
+            {/* Sidebar de shelves */}
+            {shelves.length > 0 && (
+              <aside className="shelves-sidebar">
+                <p className="sidebar-title">Shelves</p>
+                <button className={`sidebar-shelf-btn ${!activeShelf ? 'active' : ''}`}
+                  onClick={() => setActiveShelf(null)}>
+                  📚 Todas
+                </button>
+                {shelves.map(s => (
+                  <button key={s.id}
+                    className={`sidebar-shelf-btn ${activeShelf === s.id ? 'active' : ''}`}
+                    style={{ '--shelf-color': s.color }}
+                    onClick={() => setActiveShelf(activeShelf === s.id ? null : s.id)}>
+                    <span className="sidebar-dot" style={{ background: s.color }} />
+                    {s.name}
+                  </button>
                 ))}
-              </div>
+              </aside>
             )}
-          </>
+
+            <div className="main-content">
+              {activeTab === 'want' && (
+                <div className="subtabs">
+                  <button className={`subtab-btn ${subTab === 'all' ? 'active' : ''}`} onClick={() => setSubTab('all')}>Todas ({counts.want})</button>
+                  <button className={`subtab-btn ${subTab === 'complete' ? 'active' : ''}`} onClick={() => setSubTab('complete')}>✅ Completas ({counts.wantComplete})</button>
+                  <button className={`subtab-btn ${subTab === 'incomplete' ? 'active' : ''}`} onClick={() => setSubTab('incomplete')}>🔄 Em andamento ({counts.wantIncomplete})</button>
+                  <button className={`subtab-btn ${subTab === 'fav' ? 'active' : ''}`} onClick={() => setSubTab('fav')}>★ Favoritas ({counts.wantFav})</button>
+                </div>
+              )}
+              {activeTab === 'read' && (
+                <div className="subtabs">
+                  <button className={`subtab-btn ${subTab === 'all' ? 'active' : ''}`} onClick={() => setSubTab('all')}>Todas ({counts.read})</button>
+                  <button className={`subtab-btn ${subTab === 'fav' ? 'active' : ''}`} onClick={() => setSubTab('fav')}>★ Favoritas ({counts.readFav})</button>
+                </div>
+              )}
+
+              <div className="toolbar">
+                <div className="toolbar-left">
+                  <div className="search-wrap">
+                    <span className="search-icon">🔎</span>
+                    <input className="search-input" placeholder="Título, autor, série..."
+                      value={search} onChange={e => setSearch(e.target.value)} />
+                    {search && <button className="search-clear" onClick={() => setSearch('')}>✕</button>}
+                  </div>
+                  <div className="search-wrap">
+                    <span className="search-icon">📝</span>
+                    <input className="search-input" placeholder="Buscar nos resumos..."
+                      value={summarySearch} onChange={e => setSummarySearch(e.target.value)} />
+                    {summarySearch && <button className="search-clear" onClick={() => setSummarySearch('')}>✕</button>}
+                  </div>
+                </div>
+                <button className="add-btn" onClick={() => setModal({ type: 'add', defaultStatus: activeTab })}>
+                  + Adicionar fanfic
+                </button>
+              </div>
+
+              {/* Filtros ativos */}
+              {hasActiveFilter && (
+                <div className="active-filters">
+                  {tagFilter && <span className="filter-chip">🏷️ {tagFilter} <button onClick={() => setTagFilter('')}>✕</button></span>}
+                  {shipFilter && <span className="filter-chip">⚓ {shipFilter} <button onClick={() => setShipFilter('')}>✕</button></span>}
+                  {activeShelf && (
+                    <span className="filter-chip">
+                      🗂️ {shelves.find(s => s.id === activeShelf)?.name}
+                      <button onClick={() => setActiveShelf(null)}>✕</button>
+                    </span>
+                  )}
+                  <button className="clear-filters-btn" onClick={clearFilters}>Limpar filtros</button>
+                </div>
+              )}
+
+              {(search || summarySearch) && (
+                <div className="filter-info">
+                  {filtered.length} resultado{filtered.length !== 1 ? 's' : ''}
+                  {search && <span> para "<strong>{search}</strong>"</span>}
+                  {summarySearch && <span> nos resumos com "<strong>{summarySearch}</strong>"</span>}
+                </div>
+              )}
+
+              {loading ? (
+                <div style={{ textAlign: 'center', padding: 40, color: 'var(--gray)' }}>Carregando...</div>
+              ) : filtered.length === 0 ? (
+                <div className="empty-state">
+                  <div className="empty-icon">📖</div>
+                  <h3 className="empty-title">
+                    {search || summarySearch || hasActiveFilter ? 'Nenhuma fanfic encontrada'
+                      : activeTab === 'want' ? 'Sua lista está vazia'
+                      : activeTab === 'reading' ? 'Nenhuma fic em andamento'
+                      : activeTab === 'skip' ? 'Nenhuma fic aqui'
+                      : 'Nenhuma fanfic lida ainda'}
+                  </h3>
+                  <p className="empty-text">
+                    {search || summarySearch || hasActiveFilter ? 'Tente outros termos ou limpe os filtros.' : 'Clique em "+ Adicionar fanfic" para começar!'}
+                  </p>
+                </div>
+              ) : (
+                <div className="cards-grid">
+                  {filtered.map(f => (
+                    <FanficCard key={f.id} fanfic={f} allShelves={shelves}
+                      onEdit={fanfic => setModal({ type: 'edit', fanfic })}
+                      onDelete={handleDelete}
+                      onMarkRead={fanfic => setModal({ type: 'markRead', fanfic })}
+                      onStartReading={async (fanfic) => await updateFanfic(fanfic.id, { status: 'reading' })}
+                      onMarkWant={async (fanfic) => await updateFanfic(fanfic.id, { status: 'want' })}
+                      onAuthorClick={(name) => setAuthorFilter(name)}
+                      onTagClick={(tag) => setTagFilter(tag)}
+                      onShipClick={(ship) => setShipFilter(ship)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </main>
 
       {modal?.type === 'add' && (
-        <FanficModal defaultStatus={modal.defaultStatus} allFanfics={fanfics}
+        <FanficModal defaultStatus={modal.defaultStatus} allFanfics={fanfics} allShelves={shelves}
           onSave={handleSave} onClose={() => setModal(null)} />
       )}
       {modal?.type === 'edit' && (
-        <FanficModal fanfic={modal.fanfic} allFanfics={fanfics}
+        <FanficModal fanfic={modal.fanfic} allFanfics={fanfics} allShelves={shelves}
           onSave={handleSave} onClose={() => setModal(null)} />
       )}
       {modal?.type === 'markRead' && (
         <MarkReadModal fanfic={modal.fanfic} onConfirm={handleMarkRead} onClose={() => setModal(null)} />
       )}
       {authorFilter && (
-        <AuthorModal
-          author={authorFilter}
+        <AuthorModal author={authorFilter}
           fanfics={fanfics.filter(f => f.author?.toLowerCase() === authorFilter.toLowerCase())}
-          onClose={() => setAuthorFilter(null)}
-        />
+          onClose={() => setAuthorFilter(null)} />
+      )}
+      {showShelves && (
+        <ShelvesModal shelves={shelves}
+          onAdd={addShelf} onEdit={updateShelf} onDelete={deleteShelf}
+          onClose={() => setShowShelves(false)} />
       )}
     </div>
   );

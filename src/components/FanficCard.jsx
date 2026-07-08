@@ -3,10 +3,9 @@ import { getFicCategory } from '../lib/ficUtils';
 function Stars({ rating }) {
   if (!rating || rating <= 0) return null;
   const full = Math.round(rating / 2);
-  const empty = 5 - full;
   return (
     <span className="rating-stars">
-      {'★'.repeat(Math.max(0, full))}{'☆'.repeat(Math.max(0, empty))}
+      {'★'.repeat(Math.max(0, full))}{'☆'.repeat(Math.max(0, 5 - full))}
     </span>
   );
 }
@@ -27,25 +26,22 @@ function formatDate(dateStr) {
   return `${d}/${m}/${y}`;
 }
 
-const READ_ON_LABEL = { phone: '📱 Celular', kindle: '📕 Kindle' };
+const READ_ON_LABEL = { phone: '📱', kindle: '📕' };
 
-export default function FanficCard({ fanfic, onEdit, onDelete, onMarkRead, onStartReading, onMarkWant, onAuthorClick }) {
+export default function FanficCard({ fanfic, allShelves = [], onEdit, onDelete, onMarkRead, onStartReading, onMarkWant, onAuthorClick, onTagClick, onShipClick }) {
   const spineClass = `spine-${fanfic.site === 'ao3' ? 'ao3' : fanfic.site === 'wattpad' ? 'wattpad' : 'other'}`;
   const siteBadgeClass = `badge-${fanfic.site === 'ao3' ? 'ao3' : fanfic.site === 'wattpad' ? 'wattpad' : 'other'}`;
   const siteLabel = fanfic.site === 'ao3' ? 'AO3' : fanfic.site === 'wattpad' ? 'Wattpad' : 'Outro';
   const category = getFicCategory(fanfic);
   const readingHours = fanfic.wordCount ? (fanfic.wordCount / 2600 * 0.25).toFixed(1) : null;
-
-  // Aviso de série incompleta: fic está completa mas pertence a série com incompletas
-  // (esse check é feito externamente e passado como prop)
   const showSeriesWarning = fanfic.complete && fanfic._seriesHasIncomplete;
+
+  const ficShelves = allShelves.filter(s => (fanfic.shelves || []).includes(s.id));
 
   return (
     <div className={`fanfic-card ${fanfic.favorite ? 'card-favorite' : ''}`}>
       <div className={`card-spine ${spineClass}`} />
       <div className="card-body">
-
-        {/* Header */}
         <div className="card-header">
           <h3 className="card-title">
             {fanfic.favorite && <span className="fav-star">★</span>}
@@ -58,50 +54,63 @@ export default function FanficCard({ fanfic, onEdit, onDelete, onMarkRead, onSta
             <span className={`badge ${fanfic.complete ? 'badge-complete' : 'badge-incomplete'}`}>
               {fanfic.complete ? 'Completa' : 'Em andamento'}
             </span>
+            {fanfic.readOn && <span className="badge badge-device">{READ_ON_LABEL[fanfic.readOn]}</span>}
           </div>
         </div>
 
-        {/* Autor */}
         {fanfic.author && (
           <p className="card-author">
-            por{' '}
-            <button className="author-link" onClick={() => onAuthorClick(fanfic.author)}>
-              {fanfic.author}
-            </button>
+            por <button className="author-link" onClick={() => onAuthorClick(fanfic.author)}>{fanfic.author}</button>
           </p>
         )}
 
-        {/* Série */}
+        {fanfic.fandom && <p className="card-fandom">🎭 {fanfic.fandom}</p>}
+
         {fanfic.series && (
           <p className="card-series">
             📚 {fanfic.series}{fanfic.seriesPart ? ` — Parte ${fanfic.seriesPart}` : ''}
           </p>
         )}
 
-        {/* Aviso série incompleta */}
         {showSeriesWarning && (
-          <div className="series-warning">
-            ⚠️ Esta fic está completa, mas outras partes da série ainda estão em andamento
+          <div className="series-warning">⚠️ Série com partes ainda em andamento</div>
+        )}
+
+        {/* Ships */}
+        {fanfic.ships?.length > 0 && (
+          <div className="card-chips">
+            {fanfic.ships.map(s => (
+              <button key={s} className="chip chip-ship" onClick={() => onShipClick?.(s)}>⚓ {s}</button>
+            ))}
           </div>
         )}
 
-        {/* Meta */}
+        {/* Tags */}
+        {fanfic.tags?.length > 0 && (
+          <div className="card-chips">
+            {fanfic.tags.map(t => (
+              <button key={t} className="chip chip-tag" onClick={() => onTagClick?.(t)}>{t}</button>
+            ))}
+          </div>
+        )}
+
+        {/* Shelves */}
+        {ficShelves.length > 0 && (
+          <div className="card-chips">
+            {ficShelves.map(s => (
+              <span key={s.id} className="chip chip-shelf" style={{ '--shelf-color': s.color }}>
+                🗂️ {s.name}
+              </span>
+            ))}
+          </div>
+        )}
+
         <div className="card-meta">
           <ChaptersDisplay fanfic={fanfic} />
-          {category && (
-            <span className="card-meta-item card-category" style={{ color: category.color }}>
-              {category.label}
-            </span>
-          )}
-          {fanfic.readOn && (
-            <span className="card-meta-item">{READ_ON_LABEL[fanfic.readOn]}</span>
-          )}
-          {fanfic.wordCount > 0 && (
-            <span className="card-meta-item">✍️ {Number(fanfic.wordCount).toLocaleString('pt-BR')} palavras</span>
-          )}
+          {category && <span className="card-meta-item card-category" style={{ color: category.color }}>{category.label}</span>}
+          {fanfic.wordCount > 0 && <span className="card-meta-item">✍️ {Number(fanfic.wordCount).toLocaleString('pt-BR')}</span>}
         </div>
 
-        {/* Data + horas */}
         {(fanfic.readDate || readingHours) && (
           <div className="card-read-info">
             {fanfic.readDate && <span>📅 {formatDate(fanfic.readDate)}</span>}
@@ -109,7 +118,6 @@ export default function FanficCard({ fanfic, onEdit, onDelete, onMarkRead, onSta
           </div>
         )}
 
-        {/* Nota */}
         {fanfic.status === 'read' && fanfic.rating > 0 && (
           <div className="card-rating">
             <Stars rating={fanfic.rating} />
@@ -117,22 +125,10 @@ export default function FanficCard({ fanfic, onEdit, onDelete, onMarkRead, onSta
           </div>
         )}
 
-        {/* Mini resumo */}
-        {fanfic.miniSummary && (
-          <p className="card-mini-summary">{fanfic.miniSummary}</p>
-        )}
+        {fanfic.miniSummary && <p className="card-mini-summary">{fanfic.miniSummary}</p>}
+        {fanfic.summary && <p className="card-summary">{fanfic.summary}</p>}
+        {fanfic.status === 'skip' && fanfic.skipReason && <p className="card-skip-reason">🚫 {fanfic.skipReason}</p>}
 
-        {/* Resumo lida */}
-        {fanfic.summary && (
-          <p className="card-summary">{fanfic.summary}</p>
-        )}
-
-        {/* Motivo não quero */}
-        {fanfic.status === 'skip' && fanfic.skipReason && (
-          <p className="card-skip-reason">🚫 {fanfic.skipReason}</p>
-        )}
-
-        {/* Ações */}
         <div className="card-actions">
           {fanfic.status === 'want' && (
             <button className="action-btn btn-reading" onClick={() => onStartReading(fanfic)}>📖 Começar</button>

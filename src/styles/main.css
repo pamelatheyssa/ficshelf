@@ -206,3 +206,243 @@ body { font-family: var(--font-body); background: var(--navy); color: var(--crea
   .form-row { grid-template-columns: 1fr; }
   .modal { padding: 20px; }
 }
+
+/* ── SEARCH WRAP (toolbar) ── */
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-icon {
+  position: absolute;
+  left: 9px;
+  font-size: 0.8rem;
+  pointer-events: none;
+}
+.search-input {
+  padding-left: 28px !important;
+}
+.search-clear {
+  position: absolute;
+  right: 6px;
+  background: none;
+  border: none;
+  color: var(--gray);
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 2px 4px;
+  line-height: 1;
+}
+.search-clear:hover { color: var(--cream); }
+
+/* ── FILTER INFO ── */
+.filter-info {
+  font-size: 0.82rem;
+  color: var(--gray-light);
+  margin-bottom: 16px;
+  margin-top: -8px;
+  font-style: italic;
+}
+
+/* ── GLOBAL RESULT AUTHOR BUTTON ── */
+.global-result-author-btn {
+  background: none;
+  border: none;
+  color: var(--lilac);
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  transition: color 0.15s;
+}
+.global-result-author-btn:hover { color: var(--lilac-dark); }
+
+/* TOOLBAR WRAP */
+.toolbar-left {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ── MAIN LAYOUT COM SIDEBAR ── */
+.main-layout { display: flex; gap: 20px; align-items: flex-start; }
+.main-content { flex: 1; min-width: 0; }
+
+/* ── SHELVES SIDEBAR ── */
+.shelves-sidebar {
+  width: 180px;
+  flex-shrink: 0;
+  background: var(--navy-light);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius);
+  padding: 14px 10px;
+  position: sticky;
+  top: 80px;
+}
+.sidebar-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  padding: 0 6px;
+  margin-bottom: 8px;
+}
+.sidebar-shelf-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--gray-light);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  padding: 7px 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: left;
+}
+.sidebar-shelf-btn:hover { background: rgba(255,255,255,0.05); color: var(--cream); }
+.sidebar-shelf-btn.active { background: rgba(167,139,250,0.12); color: var(--cream); font-weight: 600; }
+.sidebar-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+@media (max-width: 640px) {
+  .main-layout { flex-direction: column; }
+  .shelves-sidebar { width: 100%; position: static; display: flex; flex-wrap: wrap; gap: 6px; padding: 10px; }
+  .sidebar-title { width: 100%; }
+  .sidebar-shelf-btn { width: auto; }
+}
+
+/* ── TAG / SHIP / SHELF CHIPS ── */
+.card-chips { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 7px; }
+.chip {
+  font-size: 0.72rem;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  line-height: 1.4;
+}
+.chip:hover { opacity: 0.75; }
+.chip-ship { background: rgba(244,114,182,0.12); color: var(--rose); }
+.chip-tag { background: rgba(96,165,250,0.12); color: var(--blue); }
+.chip-shelf { background: rgba(var(--shelf-color, 167,139,250), 0.15); color: var(--shelf-color, var(--lilac)); cursor: default; }
+.card-fandom { font-size: 0.78rem; color: var(--gray-light); margin-bottom: 5px; }
+
+/* ── SHELF PICKER NO MODAL ── */
+.shelf-picker { display: flex; flex-wrap: wrap; gap: 6px; }
+.shelf-pick-btn {
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: transparent;
+  color: var(--gray-light);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.shelf-pick-btn:hover { border-color: var(--shelf-color, var(--lilac)); color: var(--cream); }
+.shelf-pick-btn.selected {
+  background: color-mix(in srgb, var(--shelf-color, var(--lilac)) 20%, transparent);
+  border-color: var(--shelf-color, var(--lilac));
+  color: var(--cream);
+  font-weight: 600;
+}
+
+/* ── SHELVES MODAL ── */
+.modal-shelves { max-width: 480px; }
+.new-shelf-form { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid rgba(255,255,255,0.08); }
+.shelf-list { display: flex; flex-direction: column; gap: 8px; max-height: 300px; overflow-y: auto; margin-bottom: 16px; }
+.shelf-row { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: rgba(255,255,255,0.04); border-radius: var(--radius-sm); }
+.shelf-row.editing { flex-direction: column; align-items: stretch; }
+.shelf-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+.shelf-name { flex: 1; font-size: 0.9rem; color: var(--cream); }
+.shelf-name-input { flex: 1; }
+.shelf-row-actions { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+.color-picks { display: flex; flex-wrap: wrap; gap: 6px; }
+.color-dot { width: 22px; height: 22px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform 0.15s; }
+.color-dot:hover { transform: scale(1.15); }
+.color-dot.selected { border-color: var(--white); transform: scale(1.15); }
+
+/* ── ACTIVE FILTERS ── */
+.active-filters { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 14px; }
+.filter-chip {
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(167,139,250,0.12);
+  border: 1px solid rgba(167,139,250,0.25);
+  border-radius: 20px;
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  color: var(--lilac);
+}
+.filter-chip button { background: none; border: none; color: var(--gray); cursor: pointer; font-size: 0.75rem; padding: 0; line-height: 1; }
+.filter-chip button:hover { color: var(--cream); }
+.clear-filters-btn { background: none; border: none; color: var(--gray); font-size: 0.78rem; cursor: pointer; text-decoration: underline; font-family: var(--font-body); }
+.clear-filters-btn:hover { color: var(--cream); }
+
+/* ── TAG INPUT ── */
+.tag-input-wrap {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  background: rgba(27,31,59,0.8);
+  border: 1px solid rgba(167,139,250,0.2);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  min-height: 42px;
+  cursor: text;
+  transition: border-color 0.2s;
+}
+.tag-input-wrap:focus-within { border-color: var(--lilac); }
+.tag-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: color-mix(in srgb, var(--chip-color, var(--lilac)) 15%, transparent);
+  color: var(--chip-color, var(--lilac));
+  border-radius: 20px;
+  padding: 2px 10px 2px 10px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.tag-chip button { background: none; border: none; color: inherit; cursor: pointer; font-size: 0.75rem; padding: 0; opacity: 0.6; line-height: 1; }
+.tag-chip button:hover { opacity: 1; }
+.tag-input-field {
+  border: none; outline: none; background: transparent;
+  color: var(--cream); font-family: var(--font-body); font-size: 0.9rem;
+  flex: 1; min-width: 120px; padding: 2px 0;
+}
+.tag-input-field::placeholder { color: var(--gray); }
+
+/* ── IMPORT ROW ── */
+.import-row { display: flex; gap: 8px; }
+.import-row .form-input { flex: 1; }
+.import-btn {
+  background: var(--navy); border: 1px solid rgba(167,139,250,0.3);
+  color: var(--lilac); border-radius: var(--radius-sm);
+  font-family: var(--font-body); font-size: 0.85rem;
+  padding: 10px 14px; cursor: pointer; white-space: nowrap;
+  transition: all 0.2s; flex-shrink: 0;
+}
+.import-btn:hover:not(:disabled) { background: rgba(167,139,250,0.1); border-color: var(--lilac); }
+.import-btn:disabled { opacity: 0.5; cursor: wait; }
+.import-error { font-size: 0.8rem; color: var(--gold); margin-top: 5px; }
+
+/* ── SHELF MGR BUTTON ── */
+.shelf-mgr-btn {
+  background: transparent; border: 1px solid rgba(167,139,250,0.25);
+  color: var(--gray-light); border-radius: 8px;
+  font-size: 1rem; padding: 5px 9px; cursor: pointer;
+  transition: all 0.2s;
+}
+.shelf-mgr-btn:hover { border-color: var(--lilac); color: var(--lilac); }
+
+/* ── BADGE DEVICE ── */
+.badge-device { background: rgba(255,255,255,0.07); color: var(--gray-light); }
