@@ -4,11 +4,14 @@ import { parseWordCount, formatWordCount, wordsToHours } from '../lib/wordCount'
 export default function MarkReadModal({ fanfic, onConfirm, onClose }) {
   const [rating, setRating] = useState(7);
   const [summary, setSummary] = useState('');
-  const [wordInput, setWordInput] = useState('');
+  const [wordInput, setWordInput] = useState(
+    fanfic.wordCount ? formatWordCount(fanfic.wordCount) : ''
+  );
   const [readDate, setReadDate] = useState(new Date().toISOString().split('T')[0]);
   const [chapters, setChapters] = useState(fanfic.chapters || '');
   const [totalChapters, setTotalChapters] = useState(fanfic.totalChapters || '');
   const [totalChaptersUnknown, setTotalChaptersUnknown] = useState(fanfic.totalChaptersUnknown || false);
+  const [favorite, setFavorite] = useState(fanfic.favorite || false);
 
   const parsedWords = parseWordCount(wordInput);
   const hours = wordsToHours(parsedWords);
@@ -25,6 +28,17 @@ export default function MarkReadModal({ fanfic, onConfirm, onClose }) {
           <strong style={{ color: 'var(--cream)' }}>{fanfic.title}</strong>
         </p>
 
+        {/* Favoritar */}
+        <div className="form-group">
+          <label className="form-label">Favoritar esta fic?</label>
+          <button type="button"
+            className={`fav-toggle-btn ${favorite ? 'fav-on' : ''}`}
+            onClick={() => setFavorite(f => !f)}>
+            {favorite ? '★ Favoritada' : '☆ Adicionar aos favoritos'}
+          </button>
+        </div>
+
+        {/* Capítulos */}
         <div className="form-group">
           <label className="form-label">
             Atualizar capítulos
@@ -46,6 +60,7 @@ export default function MarkReadModal({ fanfic, onConfirm, onClose }) {
           </div>
         </div>
 
+        {/* Data + palavras */}
         <div className="form-row">
           <div className="form-group">
             <label className="form-label">Data de conclusão</label>
@@ -88,7 +103,8 @@ export default function MarkReadModal({ fanfic, onConfirm, onClose }) {
           <button className="btn-cancel" onClick={onClose}>Cancelar</button>
           <button className="btn-save" onClick={() => onConfirm(
             rating, summary, parsedWords, readDate,
-            { chapters, totalChapters, totalChaptersUnknown }
+            { chapters, totalChapters, totalChaptersUnknown },
+            favorite
           )}>Marcar como lida</button>
         </div>
       </div>

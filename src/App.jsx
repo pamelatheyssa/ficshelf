@@ -127,8 +127,8 @@ export default function App() {
     setModal(null);
   };
 
-  const handleMarkRead = async (rating, summary, wordCount, readDate, chapData) => {
-    await markAsRead(modal.fanfic.id, rating, summary, wordCount, readDate, chapData);
+  const handleMarkRead = async (rating, summary, wordCount, readDate, chapData, favorite) => {
+    await markAsRead(modal.fanfic.id, rating, summary, wordCount, readDate, chapData, favorite);
     setModal(null);
   };
 

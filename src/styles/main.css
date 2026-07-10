@@ -446,3 +446,48 @@ body { font-family: var(--font-body); background: var(--navy); color: var(--crea
 
 /* ── BADGE DEVICE ── */
 .badge-device { background: rgba(255,255,255,0.07); color: var(--gray-light); }
+
+/* ── STATS UPDATES ── */
+.stats-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+.stats-title { font-family: var(--font-display); font-size: 1.5rem; color: var(--lilac); margin-bottom: 0; }
+.export-btn { background: var(--success); border: none; color: var(--white); font-family: var(--font-body); font-weight: 600; font-size: 0.9rem; padding: 10px 18px; border-radius: var(--radius-sm); cursor: pointer; transition: all 0.2s; }
+.export-btn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+.export-btn:disabled { opacity: 0.6; cursor: wait; }
+
+/* Calendar */
+.stats-calendar { background: var(--navy-light); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+.calendar-grid { display: flex; gap: 3px; overflow-x: auto; padding-bottom: 4px; }
+.cal-week { display: flex; flex-direction: column; gap: 3px; }
+.cal-day { width: 13px; height: 13px; border-radius: 3px; background: var(--lilac); flex-shrink: 0; cursor: default; transition: opacity 0.2s; }
+.cal-day.cal-active { cursor: help; }
+.cal-legend { font-size: 0.72rem; color: var(--gray); margin-top: 8px; }
+
+/* Top lists */
+.stats-tops { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.stats-top-list { background: var(--navy-light); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius); padding: 16px; }
+.stats-section-title { font-size: 0.9rem; font-weight: 600; color: var(--gray-light); margin-bottom: 12px; }
+.stats-top-item { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 0.82rem; }
+.stats-top-item:last-child { border-bottom: none; }
+.stats-top-rank { color: var(--gray); min-width: 24px; font-size: 0.75rem; }
+.stats-top-name { flex: 1; color: var(--cream); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stats-top-count { color: var(--lilac); font-weight: 600; font-size: 0.78rem; }
+
+/* Fav authors */
+.stats-section { background: var(--navy-light); border: 1px solid rgba(255,255,255,0.06); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+.fav-authors-list { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; min-height: 32px; }
+.fav-author-item { display: flex; align-items: center; gap: 6px; background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); border-radius: 20px; padding: 4px 12px; font-size: 0.85rem; color: var(--gold); }
+.fav-author-item button { background: none; border: none; color: var(--gray); cursor: pointer; font-size: 0.75rem; padding: 0; line-height: 1; }
+.fav-author-item button:hover { color: var(--danger); }
+.fav-author-add { display: flex; gap: 8px; }
+.fav-author-add .form-input { flex: 1; }
+
+/* Fav toggle button in MarkReadModal */
+.fav-toggle-btn { display: flex; align-items: center; gap: 8px; background: transparent; border: 1px solid rgba(245,158,11,0.3); color: var(--gray-light); border-radius: var(--radius-sm); font-family: var(--font-body); font-size: 0.9rem; padding: 10px 16px; cursor: pointer; transition: all 0.2s; width: 100%; }
+.fav-toggle-btn:hover, .fav-toggle-btn.fav-on { border-color: var(--gold); color: var(--gold); background: rgba(245,158,11,0.08); }
+
+/* Import success */
+.import-success { font-size: 0.8rem; color: var(--success); margin-top: 5px; }
+
+/* Reveal button */
+.reveal-btn { background: none; border: 1px dashed rgba(167,139,250,0.3); color: var(--gray-light); border-radius: var(--radius-sm); font-family: var(--font-body); font-size: 0.85rem; padding: 8px 16px; cursor: pointer; width: 100%; margin-bottom: 16px; transition: all 0.2s; }
+.reveal-btn:hover { border-color: var(--lilac); color: var(--lilac); }

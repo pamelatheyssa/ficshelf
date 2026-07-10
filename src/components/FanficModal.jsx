@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { parseWordCount, formatWordCount, wordsToHours } from '../lib/wordCount';
 import { fuzzyMatch } from '../lib/ficUtils';
+import { importFromAO3 } from '../lib/ao3Import';
 import TagInput from './TagInput';
 
 const EMPTY = {
@@ -10,17 +11,19 @@ const EMPTY = {
   rating: 0, summary: '', wordCount: null, readDate: '',
   readOn: '', miniSummary: '', skipReason: '', favorite: false,
   ships: [], tags: [], fandom: '', shelves: [],
+  wasImported: false, // controla se exibe campos de tag/fandom
 };
 
 const STATUS_LABEL = { want: 'Quero ler', reading: 'Lendo', read: 'Lida', skip: 'Não quero ler' };
 
 export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], onSave, onClose, defaultStatus }) {
   const [form, setForm] = useState(fanfic
-    ? { ...EMPTY, ...fanfic, wordInput: fanfic.wordCount ? formatWordCount(fanfic.wordCount) : '' }
+    ? { ...EMPTY, ...fanfic, wasImported: !!(fanfic.fandom || fanfic.ships?.length || fanfic.tags?.length), wordInput: fanfic.wordCount ? formatWordCount(fanfic.wordCount) : '' }
     : { ...EMPTY, status: defaultStatus || 'want', wordInput: '' }
   );
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState('');
+  const [importSuccess, setImportSuccess] = useState('');
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
@@ -33,66 +36,32 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
     return allFanfics.filter(f => fuzzyMatch(f.title, q) && f.id !== fanfic?.id);
   }, [form.title, allFanfics, fanfic?.id]);
 
-  // Import from AO3 link
   const handleImport = async () => {
     const link = form.link?.trim();
     if (!link) { setImportError('Cole o link primeiro!'); return; }
-
     setImporting(true);
     setImportError('');
-
+    setImportSuccess('');
     try {
-      // AO3: extract work ID and call their JSON API
-      const ao3Match = link.match(/archiveofourown\.org\/works\/(\d+)/);
-      if (ao3Match) {
-        const workId = ao3Match[1];
-        const res = await fetch(`https://archiveofourown.org/works/${workId}.json?view_adult=true`, {
-          headers: { 'Accept': 'application/json' }
-        });
-
-        if (!res.ok) throw new Error('Não foi possível acessar o AO3');
-        const data = await res.json();
-
-        setForm(f => ({
-          ...f,
-          title: data.title || f.title,
-          author: data.authors?.[0]?.name || data.author_byline || f.author,
-          totalChapters: data.stats?.chapters_expected || data.chapters?.length || f.totalChapters,
-          chapters: data.stats?.chapters_written || data.chapters?.length || f.chapters,
-          complete: data.complete ?? f.complete,
-          wordInput: data.stats?.words ? String(data.stats.words) : f.wordInput,
-          fandom: data.fandoms?.[0] || f.fandom,
-          ships: data.relationships || f.ships,
-          tags: [...(data.freeform_tags || []), ...(data.warnings || [])].slice(0, 10),
-          site: 'ao3',
-        }));
-        return;
-      }
-
-      // Wattpad: extract story ID
-      const wattpadMatch = link.match(/wattpad\.com\/story\/(\d+)/);
-      if (wattpadMatch) {
-        const storyId = wattpadMatch[1];
-        const res = await fetch(`https://www.wattpad.com/api/v3/stories/${storyId}?fields=title,user,numParts,completed,mainCategory,tags`);
-        if (!res.ok) throw new Error('Não foi possível acessar o Wattpad');
-        const data = await res.json();
-
-        setForm(f => ({
-          ...f,
-          title: data.title || f.title,
-          author: data.user?.name || f.author,
-          totalChapters: data.numParts || f.totalChapters,
-          complete: data.completed ?? f.complete,
-          fandom: data.mainCategory || f.fandom,
-          tags: data.tags?.slice(0, 8) || f.tags,
-          site: 'wattpad',
-        }));
-        return;
-      }
-
-      setImportError('Link não reconhecido. Suportamos AO3 e Wattpad por enquanto.');
+      const data = await importFromAO3(link);
+      setForm(f => ({
+        ...f,
+        title: data.title || f.title,
+        author: data.author || f.author,
+        fandom: data.fandom || f.fandom,
+        ships: data.ships?.length ? data.ships : f.ships,
+        tags: data.tags?.length ? data.tags : f.tags,
+        chapters: data.chapters || f.chapters,
+        totalChapters: data.totalChapters || f.totalChapters,
+        totalChaptersUnknown: data.totalChaptersUnknown ?? f.totalChaptersUnknown,
+        wordInput: data.wordCount ? formatWordCount(data.wordCount) : f.wordInput,
+        complete: data.complete ?? f.complete,
+        site: data.site || f.site,
+        wasImported: true,
+      }));
+      setImportSuccess('✅ Dados importados com sucesso!');
     } catch (e) {
-      setImportError('Não foi possível importar automaticamente. Preencha manualmente.');
+      setImportError(e.message || 'Erro ao importar. Tente novamente.');
     } finally {
       setImporting(false);
     }
@@ -100,13 +69,14 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
 
   const toggleShelf = (shelfId) => {
     const current = form.shelves || [];
-    if (current.includes(shelfId)) set('shelves', current.filter(s => s !== shelfId));
-    else set('shelves', [...current, shelfId]);
+    set('shelves', current.includes(shelfId)
+      ? current.filter(s => s !== shelfId)
+      : [...current, shelfId]);
   };
 
   const handleSave = () => {
     if (!form.title.trim()) return alert('Informe o nome da fanfic!');
-    const { wordInput, ...rest } = form;
+    const { wordInput, wasImported, ...rest } = form;
     onSave({ ...rest, wordCount: parsedWords || null });
   };
 
@@ -115,18 +85,20 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
       <div className="modal">
         <h2 className="modal-title">{fanfic ? 'Editar fanfic' : 'Adicionar fanfic'}</h2>
 
-        {/* IMPORT pelo link */}
+        {/* IMPORT */}
         <div className="form-group">
           <label className="form-label">Link</label>
           <div className="import-row">
             <input className="form-input" type="url" value={form.link || ''}
-              onChange={e => set('link', e.target.value)} placeholder="https://archiveofourown.org/works/..." />
+              onChange={e => set('link', e.target.value)}
+              placeholder="https://archiveofourown.org/works/..." />
             <button type="button" className="import-btn" onClick={handleImport} disabled={importing}>
               {importing ? '⏳' : '⬇️ Importar'}
             </button>
           </div>
-          {importError && <p className="import-error">{importError}</p>}
-          {!fanfic && <p className="form-hint">Cole o link do AO3 ou Wattpad e clique em Importar para preencher automaticamente</p>}
+          {importError && <p className="import-error">⚠️ {importError}</p>}
+          {importSuccess && <p className="import-success">{importSuccess}</p>}
+          {!fanfic && <p className="form-hint">Cole o link do AO3 e clique em Importar para preencher automaticamente</p>}
         </div>
 
         {/* Título */}
@@ -149,18 +121,12 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
           )}
         </div>
 
-        {/* Autor + favorito */}
+        {/* Autor */}
         <div className="form-row">
           <div className="form-group">
             <label className="form-label">Autor</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <input className="form-input" value={form.author}
-                onChange={e => set('author', e.target.value)} placeholder="Nome do autor" />
-              <button type="button" className={`fav-btn ${form.favorite ? 'fav-on' : ''}`}
-                onClick={() => set('favorite', !form.favorite)}>
-                {form.favorite ? '★' : '☆'}
-              </button>
-            </div>
+            <input className="form-input" value={form.author}
+              onChange={e => set('author', e.target.value)} placeholder="Nome do autor" />
           </div>
           <div className="form-group">
             <label className="form-label">Plataforma</label>
@@ -172,30 +138,28 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
           </div>
         </div>
 
-        {/* Fandom */}
-        <div className="form-group">
-          <label className="form-label">Fandom</label>
-          <input className="form-input" value={form.fandom || ''}
-            onChange={e => set('fandom', e.target.value)} placeholder="ex: Harry Potter, Naruto..." />
-        </div>
+        {/* Fandom, ships, tags — só mostrar se importado OU se já tem valor */}
+        {(form.wasImported || form.fandom || form.ships?.length > 0 || form.tags?.length > 0) && (
+          <>
+            <div className="form-group">
+              <label className="form-label">Fandom</label>
+              <input className="form-input" value={form.fandom || ''}
+                onChange={e => set('fandom', e.target.value)} placeholder="ex: Harry Potter..." />
+            </div>
+            <TagInput label="Ships" values={form.ships || []} onChange={v => set('ships', v)}
+              placeholder="ex: Harry/Draco..." color="var(--rose)" />
+            <TagInput label="Tags" values={form.tags || []} onChange={v => set('tags', v)}
+              placeholder="ex: slow burn, angst..." color="var(--blue)" />
+          </>
+        )}
 
-        {/* Ships */}
-        <TagInput
-          label="Ships"
-          values={form.ships || []}
-          onChange={v => set('ships', v)}
-          placeholder="ex: Harry/Draco, Hermione/Ron..."
-          color="var(--rose)"
-        />
-
-        {/* Tags */}
-        <TagInput
-          label="Tags"
-          values={form.tags || []}
-          onChange={v => set('tags', v)}
-          placeholder="ex: slow burn, angst, hurt/comfort..."
-          color="var(--blue)"
-        />
+        {/* Botão para revelar campos manualmente */}
+        {!form.wasImported && !form.fandom && !form.ships?.length && !form.tags?.length && (
+          <button type="button" className="reveal-btn"
+            onClick={() => set('wasImported', true)}>
+            + Adicionar fandom, ships e tags manualmente
+          </button>
+        )}
 
         {/* Série */}
         <div className="form-row">
@@ -297,6 +261,7 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
           </div>
         )}
 
+        {/* Campos de lida */}
         {form.status === 'read' && (
           <>
             <div className="form-row">

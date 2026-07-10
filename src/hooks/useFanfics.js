@@ -28,7 +28,7 @@ export function useFanfics(userId) {
   const deleteFanfic = (id) =>
     deleteDoc(doc(db, 'fanfics', id));
 
-  const markAsRead = (id, rating, summary, wordCount, readDate, chapData) =>
+  const markAsRead = (id, rating, summary, wordCount, readDate, chapData, favorite) =>
     updateDoc(doc(db, 'fanfics', id), {
       status: 'read',
       rating: rating || null,
@@ -38,6 +38,7 @@ export function useFanfics(userId) {
       chapters: chapData?.chapters || null,
       totalChapters: chapData?.totalChapters || null,
       totalChaptersUnknown: chapData?.totalChaptersUnknown || false,
+      favorite: favorite || false,
       readAt: serverTimestamp(),
     });
 
