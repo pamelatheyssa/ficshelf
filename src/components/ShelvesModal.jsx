@@ -1,18 +1,18 @@
 import { useState } from 'react';
 
 const PRESET_COLORS = [
-  '#A78BFA', '#F472B6', '#60A5FA', '#10B981',
-  '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899',
-  '#3B82F6', '#14B8A6', '#F97316', '#6366F1',
+  '#5B7F5B', '#C0607A', '#4A7AA8', '#A07830',
+  '#7A5BAF', '#4A8A6A', '#C06040', '#5A8AAA',
+  '#8A5B7A', '#6A8A4A', '#AA6040', '#4A6AAA',
 ];
 
 function ShelfRow({ shelf, onEdit, onDelete }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(shelf.name);
-  const [color, setColor] = useState(shelf.color || '#A78BFA');
+  const [color, setColor] = useState(shelf.color || '#5B7F5B');
 
   const save = () => {
-    if (name.trim()) { onEdit(shelf.id, { name: name.trim(), color }); }
+    if (name.trim()) onEdit(shelf.id, { name: name.trim(), color });
     setEditing(false);
   };
 
@@ -23,7 +23,7 @@ function ShelfRow({ shelf, onEdit, onDelete }) {
         onKeyDown={e => e.key === 'Enter' && save()} autoFocus />
       <div className="color-picks">
         {PRESET_COLORS.map(c => (
-          <button key={c} className={`color-dot ${color === c ? 'selected' : ''}`}
+          <button key={c} type="button" className={`color-dot ${color === c ? 'selected' : ''}`}
             style={{ background: c }} onClick={() => setColor(c)} />
         ))}
       </div>
@@ -36,7 +36,7 @@ function ShelfRow({ shelf, onEdit, onDelete }) {
 
   return (
     <div className="shelf-row">
-      <span className="shelf-dot" style={{ background: shelf.color || '#A78BFA' }} />
+      <span className="shelf-dot" style={{ background: shelf.color || '#5B7F5B' }} />
       <span className="shelf-name">{shelf.name}</span>
       <div className="shelf-row-actions">
         <button className="action-btn btn-edit" onClick={() => setEditing(true)}>✏️</button>
@@ -49,15 +49,25 @@ function ShelfRow({ shelf, onEdit, onDelete }) {
   );
 }
 
-export default function ShelvesModal({ shelves, onAdd, onEdit, onDelete, onClose }) {
+export default function ShelvesModal({ shelves, onAdd, onEdit, onDelete, onClose, error }) {
   const [newName, setNewName] = useState('');
-  const [newColor, setNewColor] = useState('#A78BFA');
+  const [newColor, setNewColor] = useState('#5B7F5B');
+  const [adding, setAdding] = useState(false);
+  const [addError, setAddError] = useState('');
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!newName.trim()) return;
-    onAdd(newName.trim(), newColor);
-    setNewName('');
-    setNewColor('#A78BFA');
+    setAdding(true);
+    setAddError('');
+    try {
+      await onAdd(newName.trim(), newColor);
+      setNewName('');
+      setNewColor('#5B7F5B');
+    } catch (e) {
+      setAddError('Erro ao criar shelf: ' + (e.message || 'tente novamente'));
+    } finally {
+      setAdding(false);
+    }
   };
 
   return (
@@ -65,7 +75,6 @@ export default function ShelvesModal({ shelves, onAdd, onEdit, onDelete, onClose
       <div className="modal modal-shelves">
         <h2 className="modal-title">🗂️ Gerenciar Shelves</h2>
 
-        {/* Criar nova */}
         <div className="new-shelf-form">
           <input className="form-input" value={newName}
             onChange={e => setNewName(e.target.value)}
@@ -73,19 +82,20 @@ export default function ShelvesModal({ shelves, onAdd, onEdit, onDelete, onClose
             placeholder="Nome da nova shelf..." />
           <div className="color-picks">
             {PRESET_COLORS.map(c => (
-              <button key={c} className={`color-dot ${newColor === c ? 'selected' : ''}`}
+              <button key={c} type="button" className={`color-dot ${newColor === c ? 'selected' : ''}`}
                 style={{ background: c }} onClick={() => setNewColor(c)} />
             ))}
           </div>
-          <button className="btn-save" style={{ width: '100%' }} onClick={handleAdd}>
-            + Criar shelf
+          {addError && <p style={{ color: 'var(--danger)', fontSize: '0.82rem' }}>{addError}</p>}
+          <button className="btn-save" style={{ width: '100%' }} onClick={handleAdd} disabled={adding}>
+            {adding ? '⏳ Criando...' : '+ Criar shelf'}
           </button>
         </div>
 
         <div className="shelf-list">
           {shelves.length === 0 ? (
-            <p style={{ color: 'var(--gray)', fontSize: '0.85rem', textAlign: 'center', padding: '20px 0' }}>
-              Nenhuma shelf criada ainda.
+            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', padding: '20px 0' }}>
+              Nenhuma shelf criada ainda. Digite um nome acima e clique em "+ Criar shelf".
             </p>
           ) : shelves.map(s => (
             <ShelfRow key={s.id} shelf={s} onEdit={onEdit} onDelete={onDelete} />

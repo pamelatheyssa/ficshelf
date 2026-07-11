@@ -1,36 +1,40 @@
 /**
- * Importa dados de uma obra do AO3 via proxy CORS (allorigins.win).
- * Parseia o HTML da página da obra.
+ * Importa dados de uma obra do AO3.
+ * Usa /api/ao3proxy (Vercel Serverless Function) para evitar CORS.
  */
 export async function importFromAO3(url) {
   const match = url.match(/archiveofourown\.org\/works\/(\d+)/);
-  if (!match) throw new Error('Link do AO3 não reconhecido. Use: archiveofourown.org/works/NÚMERO');
+  if (!match) {
+    throw new Error('Link do AO3 não reconhecido. Use o formato: archiveofourown.org/works/NÚMERO');
+  }
 
   const workId = match[1];
-  const targetUrl = `https://archiveofourown.org/works/${workId}?view_adult=true`;
-  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
+
+  // Usa nosso próprio proxy serverless no Vercel
+  const proxyUrl = `/api/ao3proxy?workId=${workId}`;
 
   let html;
   try {
-    const res = await fetch(proxyUrl, { headers: { 'Accept': 'application/json' } });
-    if (!res.ok) throw new Error(`Proxy retornou ${res.status}`);
-    const json = await res.json();
-    if (!json.contents) throw new Error('Resposta vazia do proxy');
-    html = json.contents;
-  } catch (e) {
-    // Tenta proxy alternativo
-    try {
-      const alt = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
-      const res2 = await fetch(alt);
-      if (!res2.ok) throw new Error('Ambos os proxies falharam');
-      html = await res2.text();
-    } catch {
-      throw new Error('Não foi possível acessar o AO3. Verifique sua conexão e tente novamente.');
+    const res = await fetch(proxyUrl);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.error || `Erro ${res.status}`);
     }
+    html = await res.text();
+  } catch (e) {
+    if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+      throw new Error('Erro de conexão. Verifique sua internet e tente novamente.');
+    }
+    throw new Error(e.message || 'Não foi possível acessar o AO3.');
   }
 
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
+
+  // Verifica se foi redirecionado para login ou página de erro
+  if (doc.querySelector('form#new_user') || doc.title?.includes('Log In')) {
+    throw new Error('Esta obra requer login no AO3 para ser acessada.');
+  }
 
   // Título
   const title =
@@ -49,7 +53,7 @@ export async function importFromAO3(url) {
     .map(a => a.textContent.trim()).filter(Boolean);
   const fandom = fandoms.join(', ');
 
-  // Ships
+  // Ships / relationships
   const ships = [...doc.querySelectorAll('.relationship.tags a, dd.relationship a')]
     .map(a => a.textContent.trim()).filter(Boolean);
 
@@ -64,11 +68,11 @@ export async function importFromAO3(url) {
 
   const tags = [...warnings, ...freeTags].slice(0, 15);
 
-  // Stats
+  // Palavras
   const wordsText = doc.querySelector('dd.words')?.textContent?.replace(/[^\d]/g, '') || '';
   const wordCount = wordsText ? parseInt(wordsText, 10) : null;
 
-  // Capítulos: formato "X/Y" ou "X/?"
+  // Capítulos: "X/Y" ou "X/?"
   const chapText = doc.querySelector('dd.chapters')?.textContent?.trim() || '';
   let chapters = null, totalChapters = null, totalChaptersUnknown = false;
   if (chapText) {
@@ -81,7 +85,7 @@ export async function importFromAO3(url) {
     }
   }
 
-  // Status da obra
+  // Completa
   const statusEl = doc.querySelector('dd.status');
   const complete =
     statusEl?.textContent?.trim() === 'Completed' ||
@@ -89,8 +93,8 @@ export async function importFromAO3(url) {
 
   if (!title) {
     throw new Error(
-      'Não foi possível ler os dados. A obra pode ser só para membros do AO3, ' +
-      'ou o link pode estar incorreto.'
+      'Não foi possível ler os dados da obra. ' +
+      'Ela pode ser restrita a membros do AO3, ou o link pode estar incorreto.'
     );
   }
 
