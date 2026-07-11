@@ -8,7 +8,7 @@ const EMPTY = {
   title: '', author: '', series: '', seriesPart: '',
   chapters: '', totalChapters: '', totalChaptersUnknown: false,
   link: '', site: 'ao3', complete: false, status: 'want',
-  rating: 0, summary: '', wordCount: null, readDate: '',
+  rating: 5, summary: '', wordCount: null, readDate: '',
   readOn: '', miniSummary: '', skipReason: '', favorite: false,
   ships: [], tags: [], fandom: '', shelves: [],
   wasImported: false, // controla se exibe campos de tag/fandom

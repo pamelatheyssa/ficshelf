@@ -1,17 +1,16 @@
 import { useState } from 'react';
 import { parseWordCount, formatWordCount, wordsToHours } from '../lib/wordCount';
 
-export default function MarkReadModal({ fanfic, onConfirm, onClose }) {
-  const [rating, setRating] = useState(7);
-  const [summary, setSummary] = useState('');
-  const [wordInput, setWordInput] = useState(
-    fanfic.wordCount ? formatWordCount(fanfic.wordCount) : ''
-  );
+export default function MarkReadModal({ fanfic, allShelves = [], onConfirm, onClose }) {
+  const [rating, setRating] = useState(fanfic.rating || 7);
+  const [summary, setSummary] = useState(fanfic.summary || '');
+  const [wordInput, setWordInput] = useState(fanfic.wordCount ? formatWordCount(fanfic.wordCount) : '');
   const [readDate, setReadDate] = useState(new Date().toISOString().split('T')[0]);
   const [chapters, setChapters] = useState(fanfic.chapters || '');
   const [totalChapters, setTotalChapters] = useState(fanfic.totalChapters || '');
   const [totalChaptersUnknown, setTotalChaptersUnknown] = useState(fanfic.totalChaptersUnknown || false);
   const [favorite, setFavorite] = useState(fanfic.favorite || false);
+  const [shelves, setShelves] = useState(fanfic.shelves || []);
 
   const parsedWords = parseWordCount(wordInput);
   const hours = wordsToHours(parsedWords);
@@ -19,6 +18,9 @@ export default function MarkReadModal({ fanfic, onConfirm, onClose }) {
   const currentChapText = fanfic.chapters
     ? `${fanfic.chapters}/${fanfic.totalChaptersUnknown ? '?' : (fanfic.totalChapters || '?')}`
     : null;
+
+  const toggleShelf = (id) =>
+    setShelves(prev => prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]);
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -37,6 +39,23 @@ export default function MarkReadModal({ fanfic, onConfirm, onClose }) {
             {favorite ? '★ Favoritada' : '☆ Adicionar aos favoritos'}
           </button>
         </div>
+
+        {/* Shelves */}
+        {allShelves.length > 0 && (
+          <div className="form-group">
+            <label className="form-label">Adicionar a uma shelf</label>
+            <div className="shelf-picker">
+              {allShelves.map(s => (
+                <button key={s.id} type="button"
+                  className={`shelf-pick-btn ${shelves.includes(s.id) ? 'selected' : ''}`}
+                  style={{ '--shelf-color': s.color || '#A78BFA' }}
+                  onClick={() => toggleShelf(s.id)}>
+                  {s.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Capítulos */}
         <div className="form-group">
@@ -103,7 +122,7 @@ export default function MarkReadModal({ fanfic, onConfirm, onClose }) {
           <button className="btn-cancel" onClick={onClose}>Cancelar</button>
           <button className="btn-save" onClick={() => onConfirm(
             rating, summary, parsedWords, readDate,
-            { chapters, totalChapters, totalChaptersUnknown },
+            { chapters, totalChapters, totalChaptersUnknown, shelves },
             favorite
           )}>Marcar como lida</button>
         </div>

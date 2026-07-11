@@ -31,13 +31,14 @@ export function useFanfics(userId) {
   const markAsRead = (id, rating, summary, wordCount, readDate, chapData, favorite) =>
     updateDoc(doc(db, 'fanfics', id), {
       status: 'read',
-      rating: rating || null,
+      rating: rating ? Number(rating) : null,
       summary: summary || '',
       wordCount: wordCount ? Number(wordCount) : null,
       readDate: readDate || null,
       chapters: chapData?.chapters || null,
       totalChapters: chapData?.totalChapters || null,
       totalChaptersUnknown: chapData?.totalChaptersUnknown || false,
+      shelves: chapData?.shelves || [],
       favorite: favorite || false,
       readAt: serverTimestamp(),
     });

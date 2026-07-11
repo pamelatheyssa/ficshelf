@@ -1,11 +1,13 @@
 import { getFicCategory } from '../lib/ficUtils';
 
 function Stars({ rating }) {
-  if (!rating || rating <= 0) return null;
-  const full = Math.round(rating / 2);
+  const r = Number(rating);
+  if (!r || r <= 0) return null;
+  const full = Math.round(r / 2);
+  const empty = 5 - full;
   return (
     <span className="rating-stars">
-      {'★'.repeat(Math.max(0, full))}{'☆'.repeat(Math.max(0, 5 - full))}
+      {'★'.repeat(Math.max(0, full))}{'☆'.repeat(Math.max(0, empty))}
     </span>
   );
 }

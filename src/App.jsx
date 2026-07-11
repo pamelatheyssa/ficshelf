@@ -8,7 +8,7 @@ import MarkReadModal from './components/MarkReadModal';
 import AuthorModal from './components/AuthorModal';
 import StatsPanel from './components/StatsPanel';
 import ShelvesModal from './components/ShelvesModal';
-import { fuzzyMatch } from './lib/ficUtils';
+import { fuzzyMatch, getFicCategory } from './lib/ficUtils';
 import './styles/main.css';
 
 function GoogleIcon() {
@@ -23,6 +23,14 @@ function GoogleIcon() {
 }
 
 const STATUS_LABEL = { want: 'Quero ler', reading: 'Lendo', read: 'Lida', skip: 'Não quero ler' };
+const SIZE_OPTIONS = [
+  { value: '', label: 'Qualquer tamanho' },
+  { value: 'Curta', label: 'Curta (até 5 cap.)' },
+  { value: 'Média', label: 'Média (6–15 cap.)' },
+  { value: 'Longa', label: 'Longa (16–30 cap.)' },
+  { value: 'Super longa', label: 'Super longa (31–70 cap.)' },
+  { value: 'Hiper longa', label: 'Hiper longa (71+ cap.)' },
+];
 
 export default function App() {
   const { user, loading: authLoading, login, logout } = useAuth();
@@ -37,6 +45,7 @@ export default function App() {
   const [globalSearch, setGlobalSearch] = useState('');
   const [tagFilter, setTagFilter] = useState('');
   const [shipFilter, setShipFilter] = useState('');
+  const [sizeFilter, setSizeFilter] = useState('');
   const [modal, setModal] = useState(null);
   const [authorFilter, setAuthorFilter] = useState(null);
   const [showShelves, setShowShelves] = useState(false);
@@ -78,12 +87,12 @@ export default function App() {
     if (activeShelf) list = list.filter(f => (f.shelves || []).includes(activeShelf));
     if (tagFilter) list = list.filter(f => f.tags?.some(t => fuzzyMatch(t, tagFilter)));
     if (shipFilter) list = list.filter(f => f.ships?.some(s => fuzzyMatch(s, shipFilter)));
+    if (sizeFilter) list = list.filter(f => getFicCategory(f)?.label === sizeFilter);
 
     if (search.trim()) {
       const q = search.trim();
       list = list.filter(f =>
-        fuzzyMatch(f.title, q) || fuzzyMatch(f.author, q) ||
-        fuzzyMatch(f.series, q) || fuzzyMatch(f.fandom, q)
+        fuzzyMatch(f.title, q) || fuzzyMatch(f.author, q) || fuzzyMatch(f.series, q) || fuzzyMatch(f.fandom, q)
       );
     }
     if (summarySearch.trim()) {
@@ -94,7 +103,7 @@ export default function App() {
     }
 
     return sorted(list);
-  }, [enriched, activeTab, subTab, activeShelf, search, summarySearch, tagFilter, shipFilter]);
+  }, [enriched, activeTab, subTab, activeShelf, search, summarySearch, tagFilter, shipFilter, sizeFilter]);
 
   const counts = useMemo(() => ({
     want: fanfics.filter(f => f.status === 'want').length,
@@ -136,8 +145,8 @@ export default function App() {
     if (window.confirm('Remover esta fanfic?')) await deleteFanfic(id);
   };
 
-  const clearFilters = () => { setTagFilter(''); setShipFilter(''); setActiveShelf(null); };
-  const hasActiveFilter = tagFilter || shipFilter || activeShelf;
+  const clearFilters = () => { setTagFilter(''); setShipFilter(''); setActiveShelf(null); setSizeFilter(''); };
+  const hasActiveFilter = tagFilter || shipFilter || activeShelf || sizeFilter;
   const isGlobalSearching = globalSearch.trim().length > 0;
 
   return (
@@ -218,12 +227,10 @@ export default function App() {
           <StatsPanel fanfics={fanfics} shelves={shelves} />
         ) : (
           <div className="main-layout">
-            {/* Sidebar de shelves */}
             {shelves.length > 0 && (
               <aside className="shelves-sidebar">
                 <p className="sidebar-title">Shelves</p>
-                <button className={`sidebar-shelf-btn ${!activeShelf ? 'active' : ''}`}
-                  onClick={() => setActiveShelf(null)}>
+                <button className={`sidebar-shelf-btn ${!activeShelf ? 'active' : ''}`} onClick={() => setActiveShelf(null)}>
                   📚 Todas
                 </button>
                 {shelves.map(s => (
@@ -268,17 +275,23 @@ export default function App() {
                       value={summarySearch} onChange={e => setSummarySearch(e.target.value)} />
                     {summarySearch && <button className="search-clear" onClick={() => setSummarySearch('')}>✕</button>}
                   </div>
+                  <select className="size-filter-select"
+                    value={sizeFilter} onChange={e => setSizeFilter(e.target.value)}>
+                    {SIZE_OPTIONS.map(o => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
                 </div>
                 <button className="add-btn" onClick={() => setModal({ type: 'add', defaultStatus: activeTab })}>
                   + Adicionar fanfic
                 </button>
               </div>
 
-              {/* Filtros ativos */}
               {hasActiveFilter && (
                 <div className="active-filters">
                   {tagFilter && <span className="filter-chip">🏷️ {tagFilter} <button onClick={() => setTagFilter('')}>✕</button></span>}
                   {shipFilter && <span className="filter-chip">⚓ {shipFilter} <button onClick={() => setShipFilter('')}>✕</button></span>}
+                  {sizeFilter && <span className="filter-chip">📏 {sizeFilter} <button onClick={() => setSizeFilter('')}>✕</button></span>}
                   {activeShelf && (
                     <span className="filter-chip">
                       🗂️ {shelves.find(s => s.id === activeShelf)?.name}
@@ -343,7 +356,8 @@ export default function App() {
           onSave={handleSave} onClose={() => setModal(null)} />
       )}
       {modal?.type === 'markRead' && (
-        <MarkReadModal fanfic={modal.fanfic} onConfirm={handleMarkRead} onClose={() => setModal(null)} />
+        <MarkReadModal fanfic={modal.fanfic} allShelves={shelves}
+          onConfirm={handleMarkRead} onClose={() => setModal(null)} />
       )}
       {authorFilter && (
         <AuthorModal author={authorFilter}

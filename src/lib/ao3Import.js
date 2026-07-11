@@ -1,87 +1,105 @@
 /**
- * Importa dados de uma obra do AO3 parseando o HTML da página.
- * Usa allorigins.win como proxy CORS para contornar bloqueio do navegador.
+ * Importa dados de uma obra do AO3 via proxy CORS (allorigins.win).
+ * Parseia o HTML da página da obra.
  */
 export async function importFromAO3(url) {
   const match = url.match(/archiveofourown\.org\/works\/(\d+)/);
-  if (!match) throw new Error('Link do AO3 não reconhecido. Use o formato: archiveofourown.org/works/NÚMERO');
+  if (!match) throw new Error('Link do AO3 não reconhecido. Use: archiveofourown.org/works/NÚMERO');
 
   const workId = match[1];
+  const targetUrl = `https://archiveofourown.org/works/${workId}?view_adult=true`;
+  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(targetUrl)}`;
 
-  // allorigins retorna o HTML da página como JSON
-  const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(
-    `https://archiveofourown.org/works/${workId}?view_adult=true&view_full_work=false`
-  )}`;
+  let html;
+  try {
+    const res = await fetch(proxyUrl, { headers: { 'Accept': 'application/json' } });
+    if (!res.ok) throw new Error(`Proxy retornou ${res.status}`);
+    const json = await res.json();
+    if (!json.contents) throw new Error('Resposta vazia do proxy');
+    html = json.contents;
+  } catch (e) {
+    // Tenta proxy alternativo
+    try {
+      const alt = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+      const res2 = await fetch(alt);
+      if (!res2.ok) throw new Error('Ambos os proxies falharam');
+      html = await res2.text();
+    } catch {
+      throw new Error('Não foi possível acessar o AO3. Verifique sua conexão e tente novamente.');
+    }
+  }
 
-  const res = await fetch(proxyUrl);
-  if (!res.ok) throw new Error('Não foi possível acessar o AO3. Tente novamente.');
-
-  const json = await res.json();
-  if (!json.contents) throw new Error('Resposta inválida do proxy. Tente novamente.');
-
-  const html = json.contents;
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
 
   // Título
-  const title = doc.querySelector('h2.title')?.textContent?.trim()
-    || doc.querySelector('.title.heading')?.textContent?.trim()
-    || '';
+  const title =
+    doc.querySelector('h2.title.heading')?.textContent?.trim() ||
+    doc.querySelector('.title.heading')?.textContent?.trim() ||
+    doc.querySelector('h2.title')?.textContent?.trim() || '';
 
   // Autor
-  const authorEl = doc.querySelector('a[rel="author"]') || doc.querySelector('.byline a');
-  const author = authorEl?.textContent?.trim() || '';
+  const author =
+    doc.querySelector('a[rel="author"]')?.textContent?.trim() ||
+    doc.querySelector('.byline.heading a')?.textContent?.trim() ||
+    doc.querySelector('.byline a')?.textContent?.trim() || '';
 
   // Fandom
-  const fandoms = [...doc.querySelectorAll('.fandom.tags a')]
+  const fandoms = [...doc.querySelectorAll('.fandom.tags a, dd.fandom a')]
     .map(a => a.textContent.trim()).filter(Boolean);
   const fandom = fandoms.join(', ');
 
-  // Ships / relationships
-  const ships = [...doc.querySelectorAll('.relationship.tags a')]
+  // Ships
+  const ships = [...doc.querySelectorAll('.relationship.tags a, dd.relationship a')]
     .map(a => a.textContent.trim()).filter(Boolean);
 
   // Tags livres
-  const tags = [...doc.querySelectorAll('.freeform.tags a')]
+  const freeTags = [...doc.querySelectorAll('.freeform.tags a, dd.freeform a')]
     .map(a => a.textContent.trim()).filter(Boolean).slice(0, 12);
 
-  // Stats
-  const wordsEl = doc.querySelector('dd.words');
-  const wordCount = wordsEl
-    ? parseInt(wordsEl.textContent.replace(/[^\d]/g, ''), 10) || null
-    : null;
+  // Warnings
+  const warnings = [...doc.querySelectorAll('.warning.tags a, dd.warning a')]
+    .map(a => a.textContent.trim())
+    .filter(w => w && w !== 'No Archive Warnings Apply' && w !== 'Creator Chose Not To Use Archive Warnings');
 
-  const chaptersEl = doc.querySelector('dd.chapters');
+  const tags = [...warnings, ...freeTags].slice(0, 15);
+
+  // Stats
+  const wordsText = doc.querySelector('dd.words')?.textContent?.replace(/[^\d]/g, '') || '';
+  const wordCount = wordsText ? parseInt(wordsText, 10) : null;
+
+  // Capítulos: formato "X/Y" ou "X/?"
+  const chapText = doc.querySelector('dd.chapters')?.textContent?.trim() || '';
   let chapters = null, totalChapters = null, totalChaptersUnknown = false;
-  if (chaptersEl) {
-    const parts = chaptersEl.textContent.trim().split('/');
+  if (chapText) {
+    const parts = chapText.split('/');
     chapters = parseInt(parts[0], 10) || null;
-    if (parts[1] === '?' || parts[1] === undefined) {
+    if (!parts[1] || parts[1].trim() === '?') {
       totalChaptersUnknown = true;
     } else {
       totalChapters = parseInt(parts[1], 10) || null;
     }
   }
 
-  // Completa
+  // Status da obra
   const statusEl = doc.querySelector('dd.status');
-  const complete = statusEl?.textContent?.trim() === 'Completed'
-    || doc.querySelector('dt.status')?.textContent?.includes('Completed')
-    || (!totalChaptersUnknown && chapters !== null && totalChapters !== null && chapters >= totalChapters);
+  const complete =
+    statusEl?.textContent?.trim() === 'Completed' ||
+    (!totalChaptersUnknown && chapters !== null && totalChapters !== null && chapters >= totalChapters);
 
-  // Warnings
-  const warnings = [...doc.querySelectorAll('.warning.tags a')]
-    .map(a => a.textContent.trim())
-    .filter(w => w && w !== 'No Archive Warnings Apply');
-
-  if (!title) throw new Error('Não foi possível ler os dados. O AO3 pode estar com acesso restrito ou a obra pode ser só para membros.');
+  if (!title) {
+    throw new Error(
+      'Não foi possível ler os dados. A obra pode ser só para membros do AO3, ' +
+      'ou o link pode estar incorreto.'
+    );
+  }
 
   return {
     title,
     author,
     fandom,
     ships,
-    tags: [...warnings, ...tags].slice(0, 15),
+    tags,
     chapters: chapters ? String(chapters) : '',
     totalChapters: totalChapters ? String(totalChapters) : '',
     totalChaptersUnknown,
