@@ -23,13 +23,17 @@ function GoogleIcon() {
 }
 
 const STATUS_LABEL = { want: 'Quero ler', reading: 'Lendo', read: 'Lida', skip: 'Não quero ler' };
+
 const SIZE_OPTIONS = [
   { value: '', label: 'Qualquer tamanho' },
-  { value: 'Curta', label: 'Curta (até 5 cap.)' },
-  { value: 'Média', label: 'Média (6–15 cap.)' },
-  { value: 'Longa', label: 'Longa (16–30 cap.)' },
-  { value: 'Super longa', label: 'Super longa (31–70 cap.)' },
-  { value: 'Hiper longa', label: 'Hiper longa (71+ cap.)' },
+  { value: 'Curtíssima',   label: 'Curtíssima (até 5k)' },
+  { value: 'Curtinha',     label: 'Curtinha (5–10k)' },
+  { value: 'Curta',        label: 'Curta (10–20k)' },
+  { value: 'Média',        label: 'Média (20–40k)' },
+  { value: 'Mais da média',label: 'Mais da média (40–60k)' },
+  { value: 'Grande',       label: 'Grande (60–100k)' },
+  { value: 'Longa',        label: 'Longa (100–150k)' },
+  { value: 'Super longa',  label: 'Super longa (150k+)' },
 ];
 
 export default function App() {
@@ -46,6 +50,7 @@ export default function App() {
   const [tagFilter, setTagFilter] = useState('');
   const [shipFilter, setShipFilter] = useState('');
   const [sizeFilter, setSizeFilter] = useState('');
+  const [phoneFilter, setPhoneFilter] = useState(''); // 'phone' | 'kindle' | ''
   const [modal, setModal] = useState(null);
   const [authorFilter, setAuthorFilter] = useState(null);
   const [showShelves, setShowShelves] = useState(false);
@@ -83,16 +88,23 @@ export default function App() {
       if (subTab === 'fav') list = list.filter(f => f.favorite);
     }
     if (activeTab === 'read' && subTab === 'fav') list = list.filter(f => f.favorite);
+    if (activeTab === 'reading') {
+      if (subTab === 'phone') list = list.filter(f => f.preferPhone === true);
+      if (subTab === 'kindle') list = list.filter(f => !f.preferPhone);
+    }
 
     if (activeShelf) list = list.filter(f => (f.shelves || []).includes(activeShelf));
     if (tagFilter) list = list.filter(f => f.tags?.some(t => fuzzyMatch(t, tagFilter)));
     if (shipFilter) list = list.filter(f => f.ships?.some(s => fuzzyMatch(s, shipFilter)));
     if (sizeFilter) list = list.filter(f => getFicCategory(f)?.label === sizeFilter);
+    if (phoneFilter === 'phone') list = list.filter(f => f.preferPhone === true);
+    if (phoneFilter === 'kindle') list = list.filter(f => !f.preferPhone);
 
     if (search.trim()) {
       const q = search.trim();
       list = list.filter(f =>
-        fuzzyMatch(f.title, q) || fuzzyMatch(f.author, q) || fuzzyMatch(f.series, q) || fuzzyMatch(f.fandom, q)
+        fuzzyMatch(f.title, q) || fuzzyMatch(f.author, q) ||
+        fuzzyMatch(f.series, q) || fuzzyMatch(f.fandom, q)
       );
     }
     if (summarySearch.trim()) {
@@ -103,7 +115,7 @@ export default function App() {
     }
 
     return sorted(list);
-  }, [enriched, activeTab, subTab, activeShelf, search, summarySearch, tagFilter, shipFilter, sizeFilter]);
+  }, [enriched, activeTab, subTab, activeShelf, search, summarySearch, tagFilter, shipFilter, sizeFilter, phoneFilter]);
 
   const counts = useMemo(() => ({
     want: fanfics.filter(f => f.status === 'want').length,
@@ -113,6 +125,8 @@ export default function App() {
     wantComplete: fanfics.filter(f => f.status === 'want' && f.complete).length,
     wantIncomplete: fanfics.filter(f => f.status === 'want' && !f.complete).length,
     wantFav: fanfics.filter(f => f.status === 'want' && f.favorite).length,
+    readingPhone: fanfics.filter(f => f.status === 'reading' && f.preferPhone === true).length,
+    readingKindle: fanfics.filter(f => f.status === 'reading' && !f.preferPhone).length,
     readFav: fanfics.filter(f => f.status === 'read' && f.favorite).length,
   }), [fanfics]);
 
@@ -145,8 +159,11 @@ export default function App() {
     if (window.confirm('Remover esta fanfic?')) await deleteFanfic(id);
   };
 
-  const clearFilters = () => { setTagFilter(''); setShipFilter(''); setActiveShelf(null); setSizeFilter(''); };
-  const hasActiveFilter = tagFilter || shipFilter || activeShelf || sizeFilter;
+  const clearFilters = () => {
+    setTagFilter(''); setShipFilter(''); setActiveShelf(null);
+    setSizeFilter(''); setPhoneFilter('');
+  };
+  const hasActiveFilter = tagFilter || shipFilter || activeShelf || sizeFilter || phoneFilter;
   const isGlobalSearching = globalSearch.trim().length > 0;
 
   return (
@@ -192,7 +209,6 @@ export default function App() {
                         por {f.author}
                       </button>
                     )}
-                    {f.fandom && <span className="global-result-mini">🎭 {f.fandom}</span>}
                   </div>
                   <div className="global-result-tags">
                     <span className={`badge badge-${f.site === 'ao3' ? 'ao3' : f.site === 'wattpad' ? 'wattpad' : 'other'}`}>
@@ -254,6 +270,13 @@ export default function App() {
                   <button className={`subtab-btn ${subTab === 'fav' ? 'active' : ''}`} onClick={() => setSubTab('fav')}>★ Favoritas ({counts.wantFav})</button>
                 </div>
               )}
+              {activeTab === 'reading' && (
+                <div className="subtabs">
+                  <button className={`subtab-btn ${subTab === 'all' ? 'active' : ''}`} onClick={() => setSubTab('all')}>Todas ({counts.reading})</button>
+                  <button className={`subtab-btn ${subTab === 'phone' ? 'active' : ''}`} onClick={() => setSubTab('phone')}>📱 Celular ({counts.readingPhone})</button>
+                  <button className={`subtab-btn ${subTab === 'kindle' ? 'active' : ''}`} onClick={() => setSubTab('kindle')}>📕 Kindle ({counts.readingKindle})</button>
+                </div>
+              )}
               {activeTab === 'read' && (
                 <div className="subtabs">
                   <button className={`subtab-btn ${subTab === 'all' ? 'active' : ''}`} onClick={() => setSubTab('all')}>Todas ({counts.read})</button>
@@ -275,11 +298,13 @@ export default function App() {
                       value={summarySearch} onChange={e => setSummarySearch(e.target.value)} />
                     {summarySearch && <button className="search-clear" onClick={() => setSummarySearch('')}>✕</button>}
                   </div>
-                  <select className="size-filter-select"
-                    value={sizeFilter} onChange={e => setSizeFilter(e.target.value)}>
-                    {SIZE_OPTIONS.map(o => (
-                      <option key={o.value} value={o.value}>{o.label}</option>
-                    ))}
+                  <select className="size-filter-select" value={sizeFilter} onChange={e => setSizeFilter(e.target.value)}>
+                    {SIZE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                  <select className="size-filter-select" value={phoneFilter} onChange={e => setPhoneFilter(e.target.value)}>
+                    <option value="">📱 ou 📕 todos</option>
+                    <option value="phone">📱 Celular</option>
+                    <option value="kindle">📕 Kindle</option>
                   </select>
                 </div>
                 <button className="add-btn" onClick={() => setModal({ type: 'add', defaultStatus: activeTab })}>
@@ -292,12 +317,8 @@ export default function App() {
                   {tagFilter && <span className="filter-chip">🏷️ {tagFilter} <button onClick={() => setTagFilter('')}>✕</button></span>}
                   {shipFilter && <span className="filter-chip">⚓ {shipFilter} <button onClick={() => setShipFilter('')}>✕</button></span>}
                   {sizeFilter && <span className="filter-chip">📏 {sizeFilter} <button onClick={() => setSizeFilter('')}>✕</button></span>}
-                  {activeShelf && (
-                    <span className="filter-chip">
-                      🗂️ {shelves.find(s => s.id === activeShelf)?.name}
-                      <button onClick={() => setActiveShelf(null)}>✕</button>
-                    </span>
-                  )}
+                  {phoneFilter && <span className="filter-chip">{phoneFilter === 'phone' ? '📱 Celular' : '📕 Kindle'} <button onClick={() => setPhoneFilter('')}>✕</button></span>}
+                  {activeShelf && <span className="filter-chip">🗂️ {shelves.find(s => s.id === activeShelf)?.name} <button onClick={() => setActiveShelf(null)}>✕</button></span>}
                   <button className="clear-filters-btn" onClick={clearFilters}>Limpar filtros</button>
                 </div>
               )}
@@ -311,7 +332,7 @@ export default function App() {
               )}
 
               {loading ? (
-                <div style={{ textAlign: 'center', padding: 40, color: 'var(--gray)' }}>Carregando...</div>
+                <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Carregando...</div>
               ) : filtered.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-icon">📖</div>
@@ -336,8 +357,6 @@ export default function App() {
                       onStartReading={async (fanfic) => await updateFanfic(fanfic.id, { status: 'reading' })}
                       onMarkWant={async (fanfic) => await updateFanfic(fanfic.id, { status: 'want' })}
                       onAuthorClick={(name) => setAuthorFilter(name)}
-                      onTagClick={(tag) => setTagFilter(tag)}
-                      onShipClick={(ship) => setShipFilter(ship)}
                     />
                   ))}
                 </div>
