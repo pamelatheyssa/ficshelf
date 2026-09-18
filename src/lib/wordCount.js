@@ -1,9 +1,7 @@
 export function parseWordCount(value) {
   if (!value && value !== 0) return null;
   const str = String(value).trim().replace(/\s/g, '');
-  const normalized = str
-    .replace(/[.,](?=\d{3}(?:[.,]|$))/g, '')
-    .replace(',', '.');
+  const normalized = str.replace(/[.,](?=\d{3}(?:[.,]|$))/g, '').replace(',', '.');
   const num = parseFloat(normalized);
   return isNaN(num) ? null : Math.round(num);
 }
