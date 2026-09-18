@@ -9,18 +9,26 @@ const EMPTY = {
   chapters: '', totalChapters: '', totalChaptersUnknown: false,
   link: '', site: 'ao3', complete: false, status: 'want',
   rating: 5, summary: '', wordCount: null, readDate: '',
-  readOn: '', miniSummary: '', skipReason: '', favorite: false,
+  preferPhone: false,          // true = celular, false = kindle
+  miniSummary: '', skipReason: '', favorite: false,
   ships: [], tags: [], fandom: '', shelves: [],
-  wasImported: false, // controla se exibe campos de tag/fandom
+  wasImported: false,
 };
 
 const STATUS_LABEL = { want: 'Quero ler', reading: 'Lendo', read: 'Lida', skip: 'Não quero ler' };
 
 export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], onSave, onClose, defaultStatus }) {
   const [form, setForm] = useState(fanfic
-    ? { ...EMPTY, ...fanfic, wasImported: !!(fanfic.fandom || fanfic.ships?.length || fanfic.tags?.length), wordInput: fanfic.wordCount ? formatWordCount(fanfic.wordCount) : '' }
+    ? {
+        ...EMPTY, ...fanfic,
+        // migra readOn -> preferPhone
+        preferPhone: fanfic.preferPhone ?? (fanfic.readOn === 'phone') ?? false,
+        wasImported: !!(fanfic.fandom || fanfic.ships?.length || fanfic.tags?.length),
+        wordInput: fanfic.wordCount ? formatWordCount(fanfic.wordCount) : '',
+      }
     : { ...EMPTY, status: defaultStatus || 'want', wordInput: '' }
   );
+
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState('');
   const [importSuccess, setImportSuccess] = useState('');
@@ -39,9 +47,7 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
   const handleImport = async () => {
     const link = form.link?.trim();
     if (!link) { setImportError('Cole o link primeiro!'); return; }
-    setImporting(true);
-    setImportError('');
-    setImportSuccess('');
+    setImporting(true); setImportError(''); setImportSuccess('');
     try {
       const data = await importFromAO3(link);
       setForm(f => ({
@@ -61,22 +67,20 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
       }));
       setImportSuccess('✅ Dados importados com sucesso!');
     } catch (e) {
-      setImportError(e.message || 'Erro ao importar. Tente novamente.');
+      setImportError(e.message || 'Erro ao importar.');
     } finally {
       setImporting(false);
     }
   };
 
-  const toggleShelf = (shelfId) => {
-    const current = form.shelves || [];
-    set('shelves', current.includes(shelfId)
-      ? current.filter(s => s !== shelfId)
-      : [...current, shelfId]);
+  const toggleShelf = (id) => {
+    const curr = form.shelves || [];
+    set('shelves', curr.includes(id) ? curr.filter(s => s !== id) : [...curr, id]);
   };
 
   const handleSave = () => {
     if (!form.title.trim()) return alert('Informe o nome da fanfic!');
-    const { wordInput, wasImported, ...rest } = form;
+    const { wordInput, wasImported, readOn, ...rest } = form;
     onSave({ ...rest, wordCount: parsedWords || null });
   };
 
@@ -85,7 +89,7 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
       <div className="modal">
         <h2 className="modal-title">{fanfic ? 'Editar fanfic' : 'Adicionar fanfic'}</h2>
 
-        {/* IMPORT */}
+        {/* Link + Importar */}
         <div className="form-group">
           <label className="form-label">Link</label>
           <div className="import-row">
@@ -121,7 +125,7 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
           )}
         </div>
 
-        {/* Autor */}
+        {/* Autor + plataforma */}
         <div className="form-row">
           <div className="form-group">
             <label className="form-label">Autor</label>
@@ -138,7 +142,7 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
           </div>
         </div>
 
-        {/* Fandom, ships, tags — só mostrar se importado OU se já tem valor */}
+        {/* Fandom/ships/tags — só após importar ou se já tem */}
         {(form.wasImported || form.fandom || form.ships?.length > 0 || form.tags?.length > 0) && (
           <>
             <div className="form-group">
@@ -152,11 +156,8 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
               placeholder="ex: slow burn, angst..." color="var(--blue)" />
           </>
         )}
-
-        {/* Botão para revelar campos manualmente */}
         {!form.wasImported && !form.fandom && !form.ships?.length && !form.tags?.length && (
-          <button type="button" className="reveal-btn"
-            onClick={() => set('wasImported', true)}>
+          <button type="button" className="reveal-btn" onClick={() => set('wasImported', true)}>
             + Adicionar fandom, ships e tags manualmente
           </button>
         )}
@@ -181,7 +182,7 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
           <div className="chapters-row">
             <input className="form-input" type="number" min="0" value={form.chapters || ''}
               onChange={e => set('chapters', e.target.value)} placeholder="Lidos" />
-            <span style={{ color: 'var(--gray)', alignSelf: 'center', flexShrink: 0 }}>/</span>
+            <span style={{ color: 'var(--text-muted)', alignSelf: 'center', flexShrink: 0 }}>/</span>
             <input className="form-input" type="number" min="0"
               value={form.totalChaptersUnknown ? '' : (form.totalChapters || '')}
               onChange={e => set('totalChapters', e.target.value)}
@@ -194,16 +195,24 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
           </div>
         </div>
 
-        {/* Melhor ler + Status */}
+        {/* Palavras — disponível em qualquer status */}
+        <div className="form-group">
+          <label className="form-label">Nº de palavras</label>
+          <input className="form-input" value={form.wordInput || ''}
+            onChange={e => set('wordInput', e.target.value)}
+            placeholder="ex: 45.000 ou 45,000 ou 45000" />
+          {parsedWords > 0 && (
+            <div className="wordcount-preview">
+              ✍️ {formatWordCount(parsedWords)} palavras ≈ <strong>~{hours}h</strong> de leitura
+            </div>
+          )}
+          {form.wordInput && !parsedWords && (
+            <div className="wordcount-error">⚠️ Tente: 45000, 45.000 ou 45,000</div>
+          )}
+        </div>
+
+        {/* Status + Completa */}
         <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">Melhor ler no</label>
-            <select className="form-select" value={form.readOn || ''} onChange={e => set('readOn', e.target.value)}>
-              <option value="">Sem preferência</option>
-              <option value="phone">📱 Celular</option>
-              <option value="kindle">📕 Kindle</option>
-            </select>
-          </div>
           <div className="form-group">
             <label className="form-label">Status</label>
             <select className="form-select" value={form.status} onChange={e => set('status', e.target.value)}>
@@ -213,16 +222,24 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
               <option value="skip">Não quero ler</option>
             </select>
           </div>
+          <div className="form-group">
+            <label className="form-label">Obra completa?</label>
+            <select className="form-select" value={form.complete ? 'yes' : 'no'}
+              onChange={e => set('complete', e.target.value === 'yes')}>
+              <option value="no">Incompleta</option>
+              <option value="yes">Completa</option>
+            </select>
+          </div>
         </div>
 
-        {/* Completa */}
+        {/* Preferência de leitura — checkbox simples */}
         <div className="form-group">
-          <label className="form-label">Obra completa?</label>
-          <select className="form-select" value={form.complete ? 'yes' : 'no'}
-            onChange={e => set('complete', e.target.value === 'yes')}>
-            <option value="no">Incompleta</option>
-            <option value="yes">Completa</option>
-          </select>
+          <label className="checkbox-label">
+            <input type="checkbox" checked={!!form.preferPhone}
+              onChange={e => set('preferPhone', e.target.checked)} />
+            <span>📱 Prefiro ler no celular</span>
+            <span className="checkbox-hint">{form.preferPhone ? '(celular)' : '(kindle)'}</span>
+          </label>
         </div>
 
         {/* Shelves */}
@@ -233,7 +250,7 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
               {allShelves.map(s => (
                 <button key={s.id} type="button"
                   className={`shelf-pick-btn ${(form.shelves || []).includes(s.id) ? 'selected' : ''}`}
-                  style={{ '--shelf-color': s.color || '#A78BFA' }}
+                  style={{ '--shelf-color': s.color || '#5B7F5B' }}
                   onClick={() => toggleShelf(s.id)}>
                   {s.name}
                 </button>
@@ -261,29 +278,14 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
           </div>
         )}
 
-        {/* Campos de lida */}
+        {/* Campos extras para lidas */}
         {form.status === 'read' && (
           <>
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">Data de conclusão</label>
-                <input className="form-input" type="date" value={form.readDate || ''}
-                  onChange={e => set('readDate', e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Nº de palavras</label>
-                <input className="form-input" value={form.wordInput || ''}
-                  onChange={e => set('wordInput', e.target.value)} placeholder="ex: 17,162" />
-              </div>
+            <div className="form-group">
+              <label className="form-label">Data de conclusão</label>
+              <input className="form-input" type="date" value={form.readDate || ''}
+                onChange={e => set('readDate', e.target.value)} />
             </div>
-            {parsedWords > 0 && (
-              <div className="wordcount-preview">
-                📖 {formatWordCount(parsedWords)} palavras ≈ <strong>~{hours}h</strong> de leitura
-              </div>
-            )}
-            {form.wordInput && !parsedWords && (
-              <div className="wordcount-error">⚠️ Tente: 17162, 17.162 ou 17,162</div>
-            )}
             <div className="form-group">
               <label className="form-label">Nota (1–10)</label>
               <div className="rating-input">
