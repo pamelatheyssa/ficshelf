@@ -22,7 +22,7 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
     ? {
         ...EMPTY, ...fanfic,
         // migra readOn -> preferPhone
-        preferPhone: fanfic.preferPhone ?? (fanfic.readOn === 'phone') ?? false,
+        preferPhone: fanfic.preferPhone === true || fanfic.readOn === 'phone',
         wasImported: !!(fanfic.fandom || fanfic.ships?.length || fanfic.tags?.length),
         wordInput: fanfic.wordCount ? formatWordCount(fanfic.wordCount) : '',
       }
