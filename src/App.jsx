@@ -89,16 +89,16 @@ export default function App() {
     }
     if (activeTab === 'read' && subTab === 'fav') list = list.filter(f => f.favorite);
     if (activeTab === 'reading') {
-      if (subTab === 'phone') list = list.filter(f => f.preferPhone === true);
-      if (subTab === 'kindle') list = list.filter(f => !f.preferPhone);
+      if (subTab === 'phone') list = list.filter(f => f.preferPhone === true || f.readOn === 'phone');
+      if (subTab === 'kindle') list = list.filter(f => !f.preferPhone && f.readOn !== 'phone');
     }
 
     if (activeShelf) list = list.filter(f => (f.shelves || []).includes(activeShelf));
     if (tagFilter) list = list.filter(f => f.tags?.some(t => fuzzyMatch(t, tagFilter)));
     if (shipFilter) list = list.filter(f => f.ships?.some(s => fuzzyMatch(s, shipFilter)));
     if (sizeFilter) list = list.filter(f => getFicCategory(f)?.label === sizeFilter);
-    if (phoneFilter === 'phone') list = list.filter(f => f.preferPhone === true);
-    if (phoneFilter === 'kindle') list = list.filter(f => !f.preferPhone);
+    if (phoneFilter === 'phone') list = list.filter(f => f.preferPhone === true || f.readOn === 'phone');
+    if (phoneFilter === 'kindle') list = list.filter(f => !f.preferPhone && f.readOn !== 'phone');
 
     if (search.trim()) {
       const q = search.trim();
@@ -125,8 +125,8 @@ export default function App() {
     wantComplete: fanfics.filter(f => f.status === 'want' && f.complete).length,
     wantIncomplete: fanfics.filter(f => f.status === 'want' && !f.complete).length,
     wantFav: fanfics.filter(f => f.status === 'want' && f.favorite).length,
-    readingPhone: fanfics.filter(f => f.status === 'reading' && f.preferPhone === true).length,
-    readingKindle: fanfics.filter(f => f.status === 'reading' && !f.preferPhone).length,
+    readingPhone: fanfics.filter(f => f.status === 'reading' && (f.preferPhone === true || f.readOn === 'phone')).length,
+    readingKindle: fanfics.filter(f => f.status === 'reading' && !f.preferPhone && f.readOn !== 'phone').length,
     readFav: fanfics.filter(f => f.status === 'read' && f.favorite).length,
   }), [fanfics]);
 
