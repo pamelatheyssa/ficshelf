@@ -322,4 +322,5 @@ body { font-family: var(--font-body); background: var(--bg); color: var(--text);
   .toolbar-left { flex-direction: column; align-items: stretch; }
   .search-input { width: 100%; }
   .size-filter-select { width: 100%; }
+  .badge-downloaded { background: rgba(74,122,168,0.12); color: var(--blue-dark); }
 }
