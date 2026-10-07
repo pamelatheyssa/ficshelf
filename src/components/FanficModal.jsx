@@ -9,7 +9,7 @@ const EMPTY = {
   chapters: '', totalChapters: '', totalChaptersUnknown: false,
   link: '', site: 'ao3', complete: false, status: 'want',
   rating: 5, summary: '', wordCount: null, readDate: '',
-  preferPhone: false,          // true = celular, false = kindle
+  preferPhone: false,          // downloaded: false, true = celular, false = kindle
   miniSummary: '', skipReason: '', favorite: false,
   ships: [], tags: [], fandom: '', shelves: [],
   wasImported: false,
@@ -22,7 +22,7 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
     ? {
         ...EMPTY, ...fanfic,
         // migra readOn -> preferPhone
-        preferPhone: fanfic.preferPhone === true || fanfic.readOn === 'phone',
+        preferPhone: fanfic.preferPhone === true || fanfic.readOn === 'phone', downloaded: fanfic.downloaded || false,
         wasImported: !!(fanfic.fandom || fanfic.ships?.length || fanfic.tags?.length),
         wordInput: fanfic.wordCount ? formatWordCount(fanfic.wordCount) : '',
       }
@@ -241,7 +241,17 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
             <span className="checkbox-hint">{form.preferPhone ? '(celular)' : '(kindle)'}</span>
           </label>
         </div>
-
+        
+        {/* Baixada */}
+<div className="form-group">
+  <label className="checkbox-label">
+    <input type="checkbox" checked={!!form.downloaded}
+      onChange={e => set('downloaded', e.target.checked)} />
+    <span>⬇️ Já baixada</span>
+    <span className="checkbox-hint">{form.downloaded ? '(baixada)' : '(não baixada)'}</span>
+  </label>
+</div>
+        
         {/* Shelves */}
         {allShelves.length > 0 && (
           <div className="form-group">
