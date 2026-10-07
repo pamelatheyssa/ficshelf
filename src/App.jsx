@@ -91,6 +91,8 @@ export default function App() {
     if (activeTab === 'reading') {
       if (subTab === 'phone') list = list.filter(f => f.preferPhone === true || f.readOn === 'phone');
       if (subTab === 'kindle') list = list.filter(f => !f.preferPhone && f.readOn !== 'phone');
+      if (subTab === 'downloaded') list = list.filter(f => f.downloaded === true);
+      if (subTab === 'notdownloaded') list = list.filter(f => !f.downloaded);
     }
 
     if (activeShelf) list = list.filter(f => (f.shelves || []).includes(activeShelf));
@@ -128,6 +130,8 @@ export default function App() {
     readingPhone: fanfics.filter(f => f.status === 'reading' && (f.preferPhone === true || f.readOn === 'phone')).length,
     readingKindle: fanfics.filter(f => f.status === 'reading' && !f.preferPhone && f.readOn !== 'phone').length,
     readFav: fanfics.filter(f => f.status === 'read' && f.favorite).length,
+    readingDownloaded: fanfics.filter(f => f.status === 'reading' && f.downloaded === true).length,
+    readingNotDownloaded: fanfics.filter(f => f.status === 'reading' && !f.downloaded).length,
   }), [fanfics]);
 
   if (authLoading) return <div className="loading">Carregando...</div>;
@@ -277,12 +281,15 @@ export default function App() {
                   <button className={`subtab-btn ${subTab === 'kindle' ? 'active' : ''}`} onClick={() => setSubTab('kindle')}>📕 Kindle ({counts.readingKindle})</button>
                 </div>
               )}
-              {activeTab === 'read' && (
-                <div className="subtabs">
-                  <button className={`subtab-btn ${subTab === 'all' ? 'active' : ''}`} onClick={() => setSubTab('all')}>Todas ({counts.read})</button>
-                  <button className={`subtab-btn ${subTab === 'fav' ? 'active' : ''}`} onClick={() => setSubTab('fav')}>★ Favoritas ({counts.readFav})</button>
-                </div>
-              )}
+              {activeTab === 'reading' && (
+  <div className="subtabs">
+    <button className={`subtab-btn ${subTab === 'all' ? 'active' : ''}`} onClick={() => setSubTab('all')}>Todas ({counts.reading})</button>
+    <button className={`subtab-btn ${subTab === 'phone' ? 'active' : ''}`} onClick={() => setSubTab('phone')}>📱 Celular ({counts.readingPhone})</button>
+    <button className={`subtab-btn ${subTab === 'kindle' ? 'active' : ''}`} onClick={() => setSubTab('kindle')}>📕 Kindle ({counts.readingKindle})</button>
+    <button className={`subtab-btn ${subTab === 'downloaded' ? 'active' : ''}`} onClick={() => setSubTab('downloaded')}>⬇️ Baixadas ({counts.readingDownloaded})</button>
+    <button className={`subtab-btn ${subTab === 'notdownloaded' ? 'active' : ''}`} onClick={() => setSubTab('notdownloaded')}>☁️ Não baixadas ({counts.readingNotDownloaded})</button>
+  </div>
+)}
 
               <div className="toolbar">
                 <div className="toolbar-left">
