@@ -54,7 +54,7 @@ export default function FanficCard({ fanfic, allShelves = [], onEdit, onDelete, 
           </h3>
           <div className="card-badges">
             <span className={`badge ${siteBadgeClass}`}>{siteLabel}</span>
-            <span className={`badge ${fanfic.complete ? 'badge-complete' : 'badge-incomplete'}`}>
+            <span className={`badge ${fanfic.complete ? 'badge-complete' : 'badge-incomplete'}`}{fanfic.downloaded && <span className="badge badge-downloaded">⬇️ Baixada</span>}>
               {fanfic.complete ? 'Completa' : 'Em andamento'}
             </span>
             {fanfic.readOn && <span className="badge badge-device">{READ_ON_LABEL[fanfic.readOn]}</span>}
