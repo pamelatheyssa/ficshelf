@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FicShelf — Migração</title>
+  <style>
+    body { font-family: sans-serif; background: #EEF2EE; color: #2C3A2C; padding: 32px; max-width: 600px; margin: 0 auto; }
+    h1 { color: #5B7F5B; margin-bottom: 8px; }
+    .card { background: #F5F7F5; border: 1px solid rgba(90,110,90,0.2); border-radius: 12px; padding: 24px; margin-top: 20px; }
+    button { background: #5B7F5B; color: white; border: none; border-radius: 8px; padding: 12px 24px; font-size: 1rem; cursor: pointer; margin-top: 16px; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .log { background: #fff; border: 1px solid rgba(90,110,90,0.2); border-radius: 8px; padding: 16px; margin-top: 16px; font-family: monospace; font-size: 0.85rem; max-height: 300px; overflow-y: auto; white-space: pre-wrap; }
+    .success { color: #4A7A5A; } .info { color: #4A7AA8; } .warn { color: #A07830; }
+  </style>
+</head>
+<body>
+  <h1>📚 FicShelf — Migração de dispositivo</h1>
+  <p>Atualiza todas as fics salvas com preferência automática de dispositivo:</p>
+  <ul style="margin:12px 0;padding-left:20px;line-height:1.8">
+    <li>📱 Até 20.000 palavras → <strong>Celular</strong></li>
+    <li>📕 Acima de 20.000 palavras → <strong>Kindle</strong></li>
+    <li>⚪ Sem contagem de palavras → mantém como está</li>
+  </ul>
+  <p><strong>Fics com preferência já definida manualmente não serão alteradas.</strong></p>
+
+  <div class="card">
+    <div id="status">Clique em "Iniciar migração" para começar.</div>
+    <button id="btn" onclick="runMigration()">Iniciar migração</button>
+    <div class="log" id="log" style="display:none"></div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+    import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+    import { getFirestore, collection, getDocs, updateDoc, doc, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: "COLE_AQUI_SUA_FIREBASE_API_KEY",
+      authDomain: "COLE_AQUI_SEU_AUTH_DOMAIN",
+      projectId: "COLE_AQUI_SEU_PROJECT_ID",
+      storageBucket: "COLE_AQUI_SEU_STORAGE_BUCKET",
+      messagingSenderId: "COLE_AQUI_SEU_MESSAGING_SENDER_ID",
+      appId: "COLE_AQUI_SEU_APP_ID",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const logEl = () => document.getElementById('log');
+    const log = (msg, cls='') => {
+      const el = logEl();
+      el.style.display = 'block';
+      el.innerHTML += `<span class="${cls}">${msg}</span>\n`;
+      el.scrollTop = el.scrollHeight;
+    };
+
+    window.runMigration = async () => {
+      const btn = document.getElementById('btn');
+      const status = document.getElementById('status');
+      btn.disabled = true;
+      logEl().innerHTML = '';
+
+      if (!auth.currentUser) {
+        status.textContent = 'Fazendo login com Google...';
+        try {
+          await signInWithPopup(auth, new GoogleAuthProvider());
+        } catch (e) {
+          status.textContent = 'Erro no login: ' + e.message;
+          btn.disabled = false;
+          return;
+        }
+      }
+
+      const userId = auth.currentUser.uid;
+      status.textContent = 'Buscando fics...';
+      log('Iniciando migração...', 'info');
+
+      try {
+        const snap = await getDocs(query(collection(db, 'fanfics'), where('userId', '==', userId)));
+        const fics = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        log(`Total encontrado: ${fics.length} fics`, 'info');
+
+        let updated = 0, skipped = 0, noWords = 0;
+
+        for (const fic of fics) {
+          const words = Number(fic.wordCount) || 0;
+
+          if (words === 0) {
+            log(`⚪ "${fic.title}" — sem palavras, mantendo`, 'warn');
+            noWords++;
+            continue;
+          }
+
+          // Só pula se preferPhone foi explicitamente definido (true ou false)
+          if (fic.preferPhone === true || fic.preferPhone === false) {
+            log(`⏭️ "${fic.title}" — preferência já definida (${fic.preferPhone ? '📱' : '📕'}), pulando`, 'warn');
+            skipped++;
+            continue;
+          }
+
+          const shouldBePhone = words <= 20000;
+          await updateDoc(doc(db, 'fanfics', fic.id), { preferPhone: shouldBePhone });
+          log(`${shouldBePhone ? '📱' : '📕'} "${fic.title}" — ${words.toLocaleString('pt-BR')} palavras → ${shouldBePhone ? 'celular' : 'kindle'}`, 'success');
+          updated++;
+        }
+
+        log('');
+        log(`✅ Migração concluída! Atualizadas: ${updated} | Mantidas: ${skipped} | Sem palavras: ${noWords}`, 'success');
+        status.textContent = `✅ Concluído! ${updated} fics atualizadas.`;
+      } catch (e) {
+        log('❌ Erro: ' + e.message);
+        status.textContent = 'Erro durante migração.';
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Rodar novamente';
+    };
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) document.getElementById('status').textContent = `Logado como ${user.displayName}. Pronto para migrar.`;
+    });
+  </script>
+</body>
+</html>
