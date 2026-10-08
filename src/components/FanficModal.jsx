@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { parseWordCount, formatWordCount, wordsToHours } from '../lib/wordCount';
 import { fuzzyMatch } from '../lib/ficUtils';
+import { getAutoPreferPhone } from '../lib/autoPrefs';
 import { importFromAO3 } from '../lib/ao3Import';
 import TagInput from './TagInput';
 
@@ -9,10 +10,12 @@ const EMPTY = {
   chapters: '', totalChapters: '', totalChaptersUnknown: false,
   link: '', site: 'ao3', complete: false, status: 'want',
   rating: 5, summary: '', wordCount: null, readDate: '',
-  preferPhone: false,          // downloaded: false, true = celular, false = kindle
+  preferPhone: null,
+  downloaded: false,
   miniSummary: '', skipReason: '', favorite: false,
   ships: [], tags: [], fandom: '', shelves: [],
   wasImported: false,
+  userSetPhone: false, // se o user mudou manualmente, não sobrescreve
 };
 
 const STATUS_LABEL = { want: 'Quero ler', reading: 'Lendo', read: 'Lida', skip: 'Não quero ler' };
@@ -21,10 +24,15 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
   const [form, setForm] = useState(fanfic
     ? {
         ...EMPTY, ...fanfic,
-        // migra readOn -> preferPhone
-        preferPhone: fanfic.preferPhone === true || fanfic.readOn === 'phone', downloaded: fanfic.downloaded || false,
+        preferPhone: fanfic.preferPhone === true || fanfic.readOn === 'phone'
+          ? true
+          : fanfic.preferPhone === false && fanfic.readOn !== 'phone'
+          ? false
+          : null,
+        downloaded: fanfic.downloaded || false,
         wasImported: !!(fanfic.fandom || fanfic.ships?.length || fanfic.tags?.length),
         wordInput: fanfic.wordCount ? formatWordCount(fanfic.wordCount) : '',
+        userSetPhone: fanfic.preferPhone !== undefined && fanfic.preferPhone !== null,
       }
     : { ...EMPTY, status: defaultStatus || 'want', wordInput: '' }
   );
@@ -38,6 +46,15 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
   const parsedWords = parseWordCount(form.wordInput);
   const hours = wordsToHours(parsedWords);
 
+  // Auto-set preferPhone when wordCount changes, unless user set it manually
+  useEffect(() => {
+    if (form.userSetPhone) return;
+    const auto = getAutoPreferPhone(parsedWords);
+    if (auto !== null) {
+      setForm(f => ({ ...f, preferPhone: auto }));
+    }
+  }, [parsedWords]);
+
   const duplicates = useMemo(() => {
     const q = form.title.trim();
     if (q.length < 2) return [];
@@ -50,6 +67,8 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
     setImporting(true); setImportError(''); setImportSuccess('');
     try {
       const data = await importFromAO3(link);
+      const newWords = data.wordCount || null;
+      const autoPhone = !form.userSetPhone ? getAutoPreferPhone(newWords) : form.preferPhone;
       setForm(f => ({
         ...f,
         title: data.title || f.title,
@@ -60,10 +79,11 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
         chapters: data.chapters || f.chapters,
         totalChapters: data.totalChapters || f.totalChapters,
         totalChaptersUnknown: data.totalChaptersUnknown ?? f.totalChaptersUnknown,
-        wordInput: data.wordCount ? formatWordCount(data.wordCount) : f.wordInput,
+        wordInput: newWords ? formatWordCount(newWords) : f.wordInput,
         complete: data.complete ?? f.complete,
         site: data.site || f.site,
         wasImported: true,
+        preferPhone: autoPhone !== null ? autoPhone : f.preferPhone,
       }));
       setImportSuccess('✅ Dados importados com sucesso!');
     } catch (e) {
@@ -78,11 +98,18 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
     set('shelves', curr.includes(id) ? curr.filter(s => s !== id) : [...curr, id]);
   };
 
+  const handlePhoneChange = (checked) => {
+    setForm(f => ({ ...f, preferPhone: checked, userSetPhone: true }));
+  };
+
   const handleSave = () => {
     if (!form.title.trim()) return alert('Informe o nome da fanfic!');
-    const { wordInput, wasImported, readOn, ...rest } = form;
+    const { wordInput, wasImported, userSetPhone, readOn, ...rest } = form;
     onSave({ ...rest, wordCount: parsedWords || null });
   };
+
+  const isPhone = form.preferPhone === true;
+  const hasPhonePref = form.preferPhone !== null && form.preferPhone !== undefined;
 
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
@@ -142,7 +169,7 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
           </div>
         </div>
 
-        {/* Fandom/ships/tags — só após importar ou se já tem */}
+        {/* Fandom/ships/tags */}
         {(form.wasImported || form.fandom || form.ships?.length > 0 || form.tags?.length > 0) && (
           <>
             <div className="form-group">
@@ -195,7 +222,7 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
           </div>
         </div>
 
-        {/* Palavras — disponível em qualquer status */}
+        {/* Palavras */}
         <div className="form-group">
           <label className="form-label">Nº de palavras</label>
           <input className="form-input" value={form.wordInput || ''}
@@ -232,26 +259,38 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
           </div>
         </div>
 
-        {/* Preferência de leitura — checkbox simples */}
+        {/* Preferência de dispositivo — com indicação automática */}
+        <div className="form-group">
+          <label className="form-label">
+            Preferência de leitura
+            {hasPhonePref && !form.userSetPhone && (
+              <span className="auto-badge">✨ automático</span>
+            )}
+          </label>
+          <label className="checkbox-label">
+            <input type="checkbox" checked={isPhone}
+              onChange={e => handlePhoneChange(e.target.checked)} />
+            <span>📱 Prefiro ler no celular</span>
+            <span className="checkbox-hint">{isPhone ? '(celular)' : '(kindle)'}</span>
+          </label>
+          {hasPhonePref && !form.userSetPhone && parsedWords > 0 && (
+            <p className="form-hint">
+              Definido automaticamente por ter {parsedWords <= 20000 ? 'até' : 'mais de'} 20.000 palavras.
+              Marque ou desmarque para definir manualmente.
+            </p>
+          )}
+        </div>
+
+        {/* Baixada */}
         <div className="form-group">
           <label className="checkbox-label">
-            <input type="checkbox" checked={!!form.preferPhone}
-              onChange={e => set('preferPhone', e.target.checked)} />
-            <span>📱 Prefiro ler no celular</span>
-            <span className="checkbox-hint">{form.preferPhone ? '(celular)' : '(kindle)'}</span>
+            <input type="checkbox" checked={!!form.downloaded}
+              onChange={e => set('downloaded', e.target.checked)} />
+            <span>⬇️ Já baixada</span>
+            <span className="checkbox-hint">{form.downloaded ? '(baixada)' : '(não baixada)'}</span>
           </label>
         </div>
-        
-        {/* Baixada */}
-<div className="form-group">
-  <label className="checkbox-label">
-    <input type="checkbox" checked={!!form.downloaded}
-      onChange={e => set('downloaded', e.target.checked)} />
-    <span>⬇️ Já baixada</span>
-    <span className="checkbox-hint">{form.downloaded ? '(baixada)' : '(não baixada)'}</span>
-  </label>
-</div>
-        
+
         {/* Shelves */}
         {allShelves.length > 0 && (
           <div className="form-group">
@@ -288,7 +327,6 @@ export default function FanficModal({ fanfic, allFanfics = [], allShelves = [], 
           </div>
         )}
 
-        {/* Campos extras para lidas */}
         {form.status === 'read' && (
           <>
             <div className="form-group">
