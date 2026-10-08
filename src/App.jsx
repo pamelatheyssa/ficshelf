@@ -26,14 +26,14 @@ const STATUS_LABEL = { want: 'Quero ler', reading: 'Lendo', read: 'Lida', skip: 
 
 const SIZE_OPTIONS = [
   { value: '', label: 'Qualquer tamanho' },
-  { value: 'Curtíssima',   label: 'Curtíssima (até 5k)' },
-  { value: 'Curtinha',     label: 'Curtinha (5–10k)' },
-  { value: 'Curta',        label: 'Curta (10–20k)' },
-  { value: 'Média',        label: 'Média (20–40k)' },
-  { value: 'Mais da média',label: 'Mais da média (40–60k)' },
-  { value: 'Grande',       label: 'Grande (60–100k)' },
-  { value: 'Longa',        label: 'Longa (100–150k)' },
-  { value: 'Super longa',  label: 'Super longa (150k+)' },
+  { value: 'Curtíssima',    label: 'Curtíssima (até 5k)' },
+  { value: 'Curtinha',      label: 'Curtinha (5–10k)' },
+  { value: 'Curta',         label: 'Curta (10–20k)' },
+  { value: 'Média',         label: 'Média (20–40k)' },
+  { value: 'Mais da média', label: 'Mais da média (40–60k)' },
+  { value: 'Grande',        label: 'Grande (60–100k)' },
+  { value: 'Longa',         label: 'Longa (100–150k)' },
+  { value: 'Super longa',   label: 'Super longa (150k+)' },
 ];
 
 export default function App() {
@@ -50,7 +50,7 @@ export default function App() {
   const [tagFilter, setTagFilter] = useState('');
   const [shipFilter, setShipFilter] = useState('');
   const [sizeFilter, setSizeFilter] = useState('');
-  const [phoneFilter, setPhoneFilter] = useState(''); // 'phone' | 'kindle' | ''
+  const [phoneFilter, setPhoneFilter] = useState('');
   const [modal, setModal] = useState(null);
   const [authorFilter, setAuthorFilter] = useState(null);
   const [showShelves, setShowShelves] = useState(false);
@@ -67,6 +67,9 @@ export default function App() {
     fanfics.map(f => ({ ...f, _seriesHasIncomplete: f.series ? !!seriesIncompleteMap[f.series.toLowerCase()] : false })),
     [fanfics, seriesIncompleteMap]
   );
+
+  const isPhone = (f) => f.preferPhone === true || f.readOn === 'phone';
+  const isDownloaded = (f) => f.downloaded === true;
 
   const globalResults = useMemo(() => {
     const q = globalSearch.trim();
@@ -89,18 +92,18 @@ export default function App() {
     }
     if (activeTab === 'read' && subTab === 'fav') list = list.filter(f => f.favorite);
     if (activeTab === 'reading') {
-      if (subTab === 'phone') list = list.filter(f => f.preferPhone === true || f.readOn === 'phone');
-      if (subTab === 'kindle') list = list.filter(f => !f.preferPhone && f.readOn !== 'phone');
-      if (subTab === 'downloaded') list = list.filter(f => f.downloaded === true);
-      if (subTab === 'notdownloaded') list = list.filter(f => !f.downloaded);
+      if (subTab === 'phone') list = list.filter(f => isPhone(f));
+      if (subTab === 'kindle') list = list.filter(f => !isPhone(f));
+      if (subTab === 'downloaded') list = list.filter(f => isDownloaded(f));
+      if (subTab === 'notdownloaded') list = list.filter(f => !isDownloaded(f));
     }
 
     if (activeShelf) list = list.filter(f => (f.shelves || []).includes(activeShelf));
     if (tagFilter) list = list.filter(f => f.tags?.some(t => fuzzyMatch(t, tagFilter)));
     if (shipFilter) list = list.filter(f => f.ships?.some(s => fuzzyMatch(s, shipFilter)));
     if (sizeFilter) list = list.filter(f => getFicCategory(f)?.label === sizeFilter);
-    if (phoneFilter === 'phone') list = list.filter(f => f.preferPhone === true || f.readOn === 'phone');
-    if (phoneFilter === 'kindle') list = list.filter(f => !f.preferPhone && f.readOn !== 'phone');
+    if (phoneFilter === 'phone') list = list.filter(f => isPhone(f));
+    if (phoneFilter === 'kindle') list = list.filter(f => !isPhone(f));
 
     if (search.trim()) {
       const q = search.trim();
@@ -127,9 +130,9 @@ export default function App() {
     wantComplete: fanfics.filter(f => f.status === 'want' && f.complete).length,
     wantIncomplete: fanfics.filter(f => f.status === 'want' && !f.complete).length,
     wantFav: fanfics.filter(f => f.status === 'want' && f.favorite).length,
+    readFav: fanfics.filter(f => f.status === 'read' && f.favorite).length,
     readingPhone: fanfics.filter(f => f.status === 'reading' && (f.preferPhone === true || f.readOn === 'phone')).length,
     readingKindle: fanfics.filter(f => f.status === 'reading' && !f.preferPhone && f.readOn !== 'phone').length,
-    readFav: fanfics.filter(f => f.status === 'read' && f.favorite).length,
     readingDownloaded: fanfics.filter(f => f.status === 'reading' && f.downloaded === true).length,
     readingNotDownloaded: fanfics.filter(f => f.status === 'reading' && !f.downloaded).length,
   }), [fanfics]);
@@ -279,17 +282,16 @@ export default function App() {
                   <button className={`subtab-btn ${subTab === 'all' ? 'active' : ''}`} onClick={() => setSubTab('all')}>Todas ({counts.reading})</button>
                   <button className={`subtab-btn ${subTab === 'phone' ? 'active' : ''}`} onClick={() => setSubTab('phone')}>📱 Celular ({counts.readingPhone})</button>
                   <button className={`subtab-btn ${subTab === 'kindle' ? 'active' : ''}`} onClick={() => setSubTab('kindle')}>📕 Kindle ({counts.readingKindle})</button>
+                  <button className={`subtab-btn ${subTab === 'downloaded' ? 'active' : ''}`} onClick={() => setSubTab('downloaded')}>⬇️ Baixadas ({counts.readingDownloaded})</button>
+                  <button className={`subtab-btn ${subTab === 'notdownloaded' ? 'active' : ''}`} onClick={() => setSubTab('notdownloaded')}>☁️ Não baixadas ({counts.readingNotDownloaded})</button>
                 </div>
               )}
-              {activeTab === 'reading' && (
-  <div className="subtabs">
-    <button className={`subtab-btn ${subTab === 'all' ? 'active' : ''}`} onClick={() => setSubTab('all')}>Todas ({counts.reading})</button>
-    <button className={`subtab-btn ${subTab === 'phone' ? 'active' : ''}`} onClick={() => setSubTab('phone')}>📱 Celular ({counts.readingPhone})</button>
-    <button className={`subtab-btn ${subTab === 'kindle' ? 'active' : ''}`} onClick={() => setSubTab('kindle')}>📕 Kindle ({counts.readingKindle})</button>
-    <button className={`subtab-btn ${subTab === 'downloaded' ? 'active' : ''}`} onClick={() => setSubTab('downloaded')}>⬇️ Baixadas ({counts.readingDownloaded})</button>
-    <button className={`subtab-btn ${subTab === 'notdownloaded' ? 'active' : ''}`} onClick={() => setSubTab('notdownloaded')}>☁️ Não baixadas ({counts.readingNotDownloaded})</button>
-  </div>
-)}
+              {activeTab === 'read' && (
+                <div className="subtabs">
+                  <button className={`subtab-btn ${subTab === 'all' ? 'active' : ''}`} onClick={() => setSubTab('all')}>Todas ({counts.read})</button>
+                  <button className={`subtab-btn ${subTab === 'fav' ? 'active' : ''}`} onClick={() => setSubTab('fav')}>★ Favoritas ({counts.readFav})</button>
+                </div>
+              )}
 
               <div className="toolbar">
                 <div className="toolbar-left">
