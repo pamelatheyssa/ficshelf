@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FicShelf — Migração</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #EEF2EE; color: #2C3A2C; padding: 24px; }
+    .wrap { max-width: 640px; margin: 0 auto; }
+    h1 { font-size: 1.6rem; color: #5B7F5B; margin-bottom: 6px; }
+    p { font-size: 0.9rem; color: #4A5E4A; line-height: 1.6; margin-bottom: 12px; }
+    ul { padding-left: 20px; margin-bottom: 16px; line-height: 1.9; font-size: 0.9rem; }
+    .card { background: #F5F7F5; border: 1px solid rgba(90,110,90,0.2); border-radius: 12px; padding: 20px; margin-top: 20px; }
+    .card h2 { font-size: 1rem; color: #5B7F5B; margin-bottom: 12px; }
+    .login-section { text-align: center; padding: 20px 0; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; background: #5B7F5B; color: white; border: none; border-radius: 8px; padding: 11px 22px; font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 12px; transition: all 0.2s; }
+    .btn:hover:not(:disabled) { background: #3D5C3D; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-google { background: #fff; color: #333; border: 1px solid #ccc; }
+    .btn-google:hover:not(:disabled) { background: #f5f5f5; }
+    .btn-google svg { width: 18px; height: 18px; }
+    .status-bar { background: #fff; border: 1px solid rgba(90,110,90,0.2); border-radius: 8px; padding: 12px 16px; margin-top: 14px; font-size: 0.85rem; color: #4A5E4A; min-height: 44px; }
+    .log { background: #fff; border: 1px solid rgba(90,110,90,0.2); border-radius: 8px; padding: 14px; margin-top: 12px; font-family: monospace; font-size: 0.82rem; max-height: 320px; overflow-y: auto; white-space: pre-wrap; display: none; line-height: 1.6; }
+    .s { color: #4A7A5A; } .i { color: #4A7AA8; } .w { color: #A07830; } .e { color: #C0444A; }
+    .user-info { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #EEF2EE; border-radius: 8px; margin-bottom: 16px; font-size: 0.88rem; }
+    .user-info img { width: 32px; height: 32px; border-radius: 50%; }
+    .ops { display: flex; flex-direction: column; gap: 10px; }
+    .op-item { border: 1px solid rgba(90,110,90,0.2); border-radius: 8px; padding: 14px; background: #fff; }
+    .op-item h3 { font-size: 0.9rem; color: #2C3A2C; margin-bottom: 4px; }
+    .op-item p { font-size: 0.8rem; color: #7A917A; margin: 0; }
+    .warning { background: rgba(160,120,48,0.08); border: 1px solid rgba(160,120,48,0.25); border-radius: 8px; padding: 10px 14px; font-size: 0.82rem; color: #A07830; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📚 FicShelf — Migração de dados</h1>
+  <p>Ferramenta para atualizar em lote todas as suas fics salvas. Faça login com a mesma conta Google do FicShelf.</p>
+
+  <!-- Login -->
+  <div class="card" id="loginCard">
+    <h2>1. Login</h2>
+    <div class="login-section">
+      <p>Clique para entrar com sua conta Google:</p>
+      <button class="btn btn-google" onclick="doLogin()">
+        <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.09 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+        Entrar com Google
+      </button>
+      <div class="status-bar" id="loginStatus">Aguardando login...</div>
+    </div>
+  </div>
+
+  <!-- Operações (aparece após login) -->
+  <div class="card" id="opsCard" style="display:none">
+    <h2>2. Escolha o que atualizar</h2>
+    <div class="user-info" id="userInfo"></div>
+
+    <div class="warning">
+      ⚠️ Estas operações alteram dados no banco. Rode uma de cada vez e aguarde terminar.
+    </div>
+
+    <div class="ops">
+      <div class="op-item">
+        <h3>📖 Recalcular contagem de palavras</h3>
+        <p>Busca no AO3 a contagem atualizada de palavras para todas as fics com link do AO3.</p>
+        <button class="btn" onclick="runWordCount()" id="btnWords" style="margin-top:10px">Rodar</button>
+      </div>
+
+      <div class="op-item">
+        <h3>📱 Definir preferência de celular (até 20k palavras)</h3>
+        <p>Fics com até 20.000 palavras → preferPhone = true. Acima de 20k → sem preferência definida. Fics com preferência já definida manualmente são mantidas.</p>
+        <button class="btn" onclick="runPhonePref()" id="btnPhone" style="margin-top:10px">Rodar</button>
+      </div>
+
+      <div class="op-item">
+        <h3>🔄 Rodar tudo em sequência</h3>
+        <p>Recalcula palavras e depois define preferência de dispositivo.</p>
+        <button class="btn" onclick="runAll()" id="btnAll" style="margin-top:10px">Rodar tudo</button>
+      </div>
+    </div>
+
+    <div class="status-bar" id="opStatus" style="margin-top:16px">Pronto para rodar.</div>
+    <div class="log" id="log"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+  import { getFirestore, collection, getDocs, updateDoc, doc, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+  // ── COLE SUAS CHAVES AQUI ──
+  const firebaseConfig = {
+    apiKey: "AIzaSyBZ69L_JQwG0-MisH3d2kyzxB05zI5j8-M",
+    authDomain: "ficshelf.firebaseapp.com",
+    projectId: "ficshelf",
+    storageBucket: "ficshelf.firebasestorage.app",
+    messagingSenderId: "218985892233",
+    appId: "1:218985892233:web:446904a1a3bf1d9ba73958",
+  };
+  // ─────────────────────────
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const provider = new GoogleAuthProvider();
+
+  let currentUser = null;
+
+  const logEl = document.getElementById('log');
+  const statusEl = document.getElementById('opStatus');
+
+  const log = (msg, cls='') => {
+    logEl.style.display = 'block';
+    logEl.innerHTML += `<span class="${cls}">${msg}</span>\n`;
+    logEl.scrollTop = logEl.scrollHeight;
+  };
+  const setStatus = (msg) => { statusEl.textContent = msg; };
+  const setAllBtns = (disabled) => {
+    ['btnWords','btnPhone','btnAll'].forEach(id => document.getElementById(id).disabled = disabled);
+  };
+
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      currentUser = user;
+      document.getElementById('loginCard').style.display = 'none';
+      document.getElementById('opsCard').style.display = 'block';
+      document.getElementById('userInfo').innerHTML =
+        `${user.photoURL ? `<img src="${user.photoURL}" alt="">` : ''}
+         <span>Logado como <strong>${user.displayName}</strong> (${user.email})</span>`;
+    } else {
+      currentUser = null;
+      document.getElementById('loginCard').style.display = 'block';
+      document.getElementById('opsCard').style.display = 'none';
+    }
+  });
+
+  window.doLogin = async () => {
+    document.getElementById('loginStatus').textContent = 'Abrindo janela do Google...';
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (e) {
+      document.getElementById('loginStatus').textContent = 'Erro: ' + e.message;
+    }
+  };
+
+  async function getFics() {
+    const snap = await getDocs(query(collection(db, 'fanfics'), where('userId', '==', currentUser.uid)));
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  }
+
+  async function fetchWordCount(workId) {
+    try {
+      const res = await fetch(`/api/ao3proxy?workId=${workId}`);
+      if (!res.ok) return null;
+      const data = await res.json();
+
+      if (data.source === 'api' && data.data) {
+        return data.data.stats?.words || data.data.word_count || null;
+      }
+      if (data.source === 'html' && data.html) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data.html, 'text/html');
+        const wordsText = doc.querySelector('dd.words')?.textContent?.replace(/[^\d]/g, '') || '';
+        return wordsText ? parseInt(wordsText, 10) : null;
+      }
+    } catch { return null; }
+    return null;
+  }
+
+  window.runWordCount = async () => {
+    logEl.innerHTML = '';
+    setAllBtns(true);
+    setStatus('Buscando fics...');
+    log('=== Recalculando contagem de palavras ===', 'i');
+
+    const fics = await getFics();
+    const ao3Fics = fics.filter(f => f.link?.includes('archiveofourown.org/works/'));
+    log(`Total: ${fics.length} fics | Com link AO3: ${ao3Fics.length}`, 'i');
+
+    let updated = 0, failed = 0, skipped = 0;
+
+    for (const fic of ao3Fics) {
+      setStatus(`Buscando: ${fic.title}...`);
+      const match = fic.link.match(/works\/(\d+)/);
+      if (!match) { skipped++; continue; }
+
+      const words = await fetchWordCount(match[1]);
+      await new Promise(r => setTimeout(r, 800)); // rate limit
+
+      if (!words) {
+        log(`⚠️ "${fic.title}" — não foi possível buscar`, 'w');
+        failed++;
+        continue;
+      }
+
+      if (words === fic.wordCount) {
+        log(`= "${fic.title}" — ${words.toLocaleString('pt-BR')} (sem mudança)`, 'w');
+        skipped++;
+        continue;
+      }
+
+      await updateDoc(doc(db, 'fanfics', fic.id), { wordCount: words });
+      log(`✅ "${fic.title}" — ${words.toLocaleString('pt-BR')} palavras`, 's');
+      updated++;
+    }
+
+    log(`\n✅ Concluído! Atualizadas: ${updated} | Sem mudança: ${skipped} | Falhas: ${failed}`, 's');
+    setStatus(`Pronto! ${updated} fics atualizadas.`);
+    setAllBtns(false);
+    return fics; // retorna para uso em runAll
+  };
+
+  window.runPhonePref = async (ficsOverride) => {
+    if (!ficsOverride) logEl.innerHTML = '';
+    setAllBtns(true);
+    if (!ficsOverride) setStatus('Buscando fics...');
+    log('\n=== Definindo preferência de dispositivo ===', 'i');
+
+    const fics = ficsOverride || await getFics();
+    let updated = 0, skipped = 0, noWords = 0;
+
+    for (const fic of fics) {
+      const words = Number(fic.wordCount) || 0;
+
+      if (words === 0) {
+        log(`⚪ "${fic.title}" — sem palavras, mantendo`, 'w');
+        noWords++;
+        continue;
+      }
+
+      // Só pula se foi definido manualmente (true ou false explícito)
+      if (fic.preferPhone === true || fic.preferPhone === false) {
+        log(`⏭️ "${fic.title}" — preferência já definida manualmente, pulando`, 'w');
+        skipped++;
+        continue;
+      }
+
+      if (words <= 20000) {
+        await updateDoc(doc(db, 'fanfics', fic.id), { preferPhone: true });
+        log(`📱 "${fic.title}" — ${words.toLocaleString('pt-BR')} palavras → celular`, 's');
+        updated++;
+      } else {
+        // Acima de 20k: não define preferência (deixa null/undefined)
+        log(`⚪ "${fic.title}" — ${words.toLocaleString('pt-BR')} palavras → sem preferência definida`, 'w');
+        noWords++;
+      }
+    }
+
+    log(`\n✅ Concluído! Celular definido: ${updated} | Mantidas: ${skipped} | Sem preferência: ${noWords}`, 's');
+    setStatus(`Pronto! ${updated} fics marcadas para celular.`);
+    setAllBtns(false);
+  };
+
+  window.runAll = async () => {
+    logEl.innerHTML = '';
+    log('=== RODANDO TUDO EM SEQUÊNCIA ===', 'i');
+    // Roda words primeiro, depois pega fics atualizadas para phone pref
+    await runWordCount();
+    // Pequena pausa
+    await new Promise(r => setTimeout(r, 1000));
+    // Busca fics atualizadas do banco para usar nas palavras recém salvas
+    const updatedFics = await getFics();
+    await runPhonePref(updatedFics);
+    log('\n🎉 Tudo concluído!', 's');
+    setStatus('Tudo concluído!');
+  };
+</script>
+</body>
+</html>
