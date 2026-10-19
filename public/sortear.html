@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FicShelf — Sorteador</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #EEF2EE; --surface: #F5F7F5; --surface2: #fff;
+      --border: rgba(90,110,90,0.18); --border-strong: rgba(90,110,90,0.28);
+      --text: #2C3A2C; --text2: #4A5E4A; --muted: #7A917A;
+      --accent: #5B7F5B; --accent-dark: #3D5C3D; --accent-light: rgba(91,127,91,0.12);
+      --rose: #C0607A; --blue: #4A7AA8; --gold: #A07830;
+      --shadow: 0 4px 20px rgba(44,58,44,0.10);
+      --shadow-lg: 0 8px 40px rgba(44,58,44,0.16);
+      --radius: 14px; --font-d: 'Playfair Display', Georgia, serif; --font-b: 'Inter', sans-serif;
+    }
+    body { font-family: var(--font-b); background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    /* HEADER */
+    .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; height: 58px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; box-shadow: 0 1px 6px rgba(44,58,44,0.07); }
+    .header-logo { font-family: var(--font-d); font-size: 1.35rem; color: var(--accent); }
+    .header-back { font-size: 0.82rem; color: var(--muted); text-decoration: none; border: 1px solid var(--border-strong); padding: 5px 12px; border-radius: 20px; transition: all 0.2s; }
+    .header-back:hover { color: var(--accent); border-color: var(--accent); }
+
+    /* MAIN */
+    .main { max-width: 680px; margin: 0 auto; padding: 32px 20px 60px; }
+    h1 { font-family: var(--font-d); font-size: 1.8rem; color: var(--accent); margin-bottom: 6px; }
+    .subtitle { font-size: 0.9rem; color: var(--muted); margin-bottom: 32px; font-style: italic; }
+
+    /* LOGIN */
+    #loginSection { text-align: center; padding: 40px 0; }
+    .btn-google { display: inline-flex; align-items: center; gap: 10px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 10px; padding: 12px 22px; font-family: var(--font-b); font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: var(--shadow); }
+    .btn-google:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
+    .btn-google svg { width: 18px; height: 18px; }
+
+    /* FILTERS */
+    .filters-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 24px; }
+    .filters-card h2 { font-size: 0.95rem; font-weight: 600; color: var(--text2); margin-bottom: 16px; }
+    .filter-row { display: flex; flex-direction: column; gap: 14px; }
+    .filter-group { display: flex; flex-direction: column; gap: 8px; }
+    .filter-label { font-size: 0.82rem; font-weight: 500; color: var(--text2); }
+    .chips-row { display: flex; flex-wrap: wrap; gap: 7px; }
+    .chip-btn { padding: 7px 16px; border-radius: 20px; border: 1.5px solid var(--border-strong); background: transparent; color: var(--muted); font-family: var(--font-b); font-size: 0.82rem; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .chip-btn:hover { border-color: var(--accent); color: var(--text); }
+    .chip-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+    .chip-btn.all-btn.active { background: var(--text2); border-color: var(--text2); }
+
+    /* SIZE CHIPS colors */
+    .chip-curtissima.active { background: #4A9A6A; border-color: #4A9A6A; }
+    .chip-curtinha.active   { background: #5B8FAA; border-color: #5B8FAA; }
+    .chip-curta.active      { background: #6A7AAA; border-color: #6A7AAA; }
+    .chip-media.active      { background: #8A6AAA; border-color: #8A6AAA; }
+    .chip-maismedia.active  { background: #AA6A8A; border-color: #AA6A8A; }
+    .chip-grande.active     { background: #C07850; border-color: #C07850; }
+    .chip-longa.active      { background: #C05858; border-color: #C05858; }
+    .chip-super.active      { background: #8B3A8B; border-color: #8B3A8B; }
+
+    /* SORT BUTTON */
+    .sort-btn { width: 100%; padding: 16px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); font-family: var(--font-d); font-size: 1.15rem; font-style: italic; cursor: pointer; transition: all 0.2s; margin-bottom: 28px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .sort-btn:hover:not(:disabled) { background: var(--accent-dark); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+    .sort-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .sort-btn .dice { font-size: 1.4rem; transition: transform 0.3s; }
+    .sort-btn:not(:disabled):hover .dice { transform: rotate(180deg); }
+
+    /* RESULT */
+    #result { display: none; }
+    .result-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+    .result-card { background: var(--surface2); border: 2px solid var(--accent); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-lg); animation: popIn 0.35s ease; }
+    @keyframes popIn { from { opacity: 0; transform: scale(0.94) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+    .result-spine { height: 5px; }
+    .spine-ao3 { background: linear-gradient(90deg, #9E4060, #C0607A); }
+    .spine-wattpad { background: linear-gradient(90deg, #2D5C8A, #4A7AA8); }
+    .spine-other { background: linear-gradient(90deg, #3D5C3D, #5B7F5B); }
+    .result-body { padding: 22px; }
+    .result-title { font-family: var(--font-d); font-size: 1.3rem; color: var(--text); margin-bottom: 6px; line-height: 1.3; }
+    .result-title a { color: inherit; text-decoration: none; }
+    .result-title a:hover { color: var(--accent); }
+    .result-author { font-size: 0.88rem; color: var(--text2); margin-bottom: 12px; }
+    .result-author span { color: var(--accent); font-weight: 500; }
+    .result-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; align-items: center; }
+    .badge { font-size: 0.68rem; font-weight: 600; padding: 3px 9px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge-ao3 { background: rgba(192,96,122,0.12); color: #9E4060; }
+    .badge-wattpad { background: rgba(74,122,168,0.12); color: #2D5C8A; }
+    .badge-other { background: var(--accent-light); color: var(--accent-dark); }
+    .badge-complete { background: rgba(74,122,90,0.12); color: #4A7A5A; }
+    .badge-size { font-size: 0.72rem; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
+    .result-summary { font-size: 0.85rem; color: var(--text2); line-height: 1.6; padding: 10px 12px; background: var(--bg); border-radius: 8px; margin-bottom: 14px; font-style: italic; border-left: 3px solid var(--accent); }
+    .result-series { font-size: 0.82rem; color: var(--accent); margin-bottom: 10px; font-style: italic; }
+    .result-words { font-size: 0.8rem; color: var(--muted); margin-bottom: 16px; }
+    .result-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-family: var(--font-b); font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.2s; }
+    .btn-link:hover { background: var(--accent-dark); }
+    .btn-resort { padding: 8px 16px; background: transparent; border: 1.5px solid var(--border-strong); color: var(--text2); border-radius: 8px; font-family: var(--font-b); font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+    .btn-resort:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* COUNT */
+    .pool-info { font-size: 0.8rem; color: var(--muted); text-align: center; margin-bottom: 16px; font-style: italic; }
+
+    /* EMPTY */
+    .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.5; }
+    .empty-text { font-size: 0.9rem; }
+
+    /* STATUS */
+    .status-msg { font-size: 0.85rem; color: var(--muted); text-align: center; padding: 16px 0; }
+
+    @media (max-width: 480px) { .main { padding: 20px 16px 40px; } }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-logo">📚 FicShelf</div>
+  <a href="/" class="header-back">← Voltar ao app</a>
+</header>
+
+<main class="main">
+  <h1>🎲 Sorteador de fanfics</h1>
+  <p class="subtitle">Sorteia uma fic completa da sua lista "Quero ler"</p>
+
+  <!-- Login -->
+  <div id="loginSection">
+    <p style="color:var(--text2);margin-bottom:20px">Entre com sua conta Google do FicShelf para acessar suas fics:</p>
+    <button class="btn-google" onclick="doLogin()">
+      <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.09 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Entrar com Google
+    </button>
+    <p id="loginMsg" class="status-msg"></p>
+  </div>
+
+  <!-- App (escondido até login) -->
+  <div id="appSection" style="display:none">
+
+    <!-- Filtros -->
+    <div class="filters-card">
+      <h2>🎯 Filtros do sorteio</h2>
+      <div class="filter-row">
+
+        <!-- Tamanho -->
+        <div class="filter-group">
+          <div class="filter-label">Tamanho (por palavras)</div>
+          <div class="chips-row" id="sizeChips">
+            <button class="chip-btn all-btn active" data-size="all" onclick="toggleSize(this)">Qualquer</button>
+            <button class="chip-btn chip-curtissima" data-size="Curtíssima" onclick="toggleSize(this)">Curtíssima<br><span style="font-size:0.7rem;opacity:0.8">até 5k</span></button>
+            <button class="chip-btn chip-curtinha"   data-size="Curtinha"   onclick="toggleSize(this)">Curtinha<br><span style="font-size:0.7rem;opacity:0.8">5–10k</span></button>
+            <button class="chip-btn chip-curta"      data-size="Curta"      onclick="toggleSize(this)">Curta<br><span style="font-size:0.7rem;opacity:0.8">10–20k</span></button>
+            <button class="chip-btn chip-media"      data-size="Média"      onclick="toggleSize(this)">Média<br><span style="font-size:0.7rem;opacity:0.8">20–40k</span></button>
+            <button class="chip-btn chip-maismedia"  data-size="Mais da média" onclick="toggleSize(this)">Mais da média<br><span style="font-size:0.7rem;opacity:0.8">40–60k</span></button>
+            <button class="chip-btn chip-grande"     data-size="Grande"     onclick="toggleSize(this)">Grande<br><span style="font-size:0.7rem;opacity:0.8">60–100k</span></button>
+            <button class="chip-btn chip-longa"      data-size="Longa"      onclick="toggleSize(this)">Longa<br><span style="font-size:0.7rem;opacity:0.8">100–150k</span></button>
+            <button class="chip-btn chip-super"      data-size="Super longa" onclick="toggleSize(this)">Super longa<br><span style="font-size:0.7rem;opacity:0.8">150k+</span></button>
+          </div>
+        </div>
+
+        <!-- Série -->
+        <div class="filter-group">
+          <div class="filter-label">Série</div>
+          <div class="chips-row">
+            <button class="chip-btn active" id="serieAll" onclick="setSerie('all')">Qualquer</button>
+            <button class="chip-btn" id="serieYes" onclick="setSerie('yes')">📚 Com série</button>
+            <button class="chip-btn" id="serieNo" onclick="setSerie('no')">📄 Sem série</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <p class="pool-info" id="poolInfo">Carregando fics...</p>
+
+    <button class="sort-btn" onclick="sortear()" id="sortBtn" disabled>
+      <span class="dice">🎲</span> Sortear uma fic!
+    </button>
+
+    <!-- Resultado -->
+    <div id="result">
+      <div class="result-label">✨ Sua próxima leitura:</div>
+      <div class="result-card" id="resultCard">
+        <div class="result-spine" id="resultSpine"></div>
+        <div class="result-body">
+          <h2 class="result-title" id="resultTitle"></h2>
+          <p class="result-author" id="resultAuthor"></p>
+          <div class="result-series" id="resultSeries" style="display:none"></div>
+          <div class="result-meta" id="resultMeta"></div>
+          <div class="result-words" id="resultWords"></div>
+          <div class="result-summary" id="resultSummary" style="display:none"></div>
+          <div class="result-actions" id="resultActions"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+  import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+  import { getFirestore, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+  // ── COLE SUAS CHAVES AQUI ──
+  const firebaseConfig = {
+    apiKey: "AIzaSyBZ69L_JQwG0-MisH3d2kyzxB05zI5j8-M",
+    authDomain: "ficshelf.firebaseapp.com",
+    projectId: "ficshelf",
+    storageBucket: "ficshelf.firebasestorage.app",
+    messagingSenderId: "218985892233",
+    appId: "1:218985892233:web:446904a1a3bf1d9ba73958",
+  };
+  // ─────────────────────────
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  let allFics = [];
+  let selectedSize = 'all';
+  let selectedSerie = 'all';
+
+  // ── CATEGORY ──
+  function getCategory(fic) {
+    const w = Number(fic.wordCount) || 0;
+    if (w === 0) return null;
+    if (w <= 5000)   return 'Curtíssima';
+    if (w <= 10000)  return 'Curtinha';
+    if (w <= 20000)  return 'Curta';
+    if (w <= 40000)  return 'Média';
+    if (w <= 60000)  return 'Mais da média';
+    if (w <= 100000) return 'Grande';
+    if (w <= 150000) return 'Longa';
+    return 'Super longa';
+  }
+
+  const CAT_COLOR = {
+    'Curtíssima': '#4A9A6A', 'Curtinha': '#5B8FAA', 'Curta': '#6A7AAA',
+    'Média': '#8A6AAA', 'Mais da média': '#AA6A8A', 'Grande': '#C07850',
+    'Longa': '#C05858', 'Super longa': '#8B3A8B',
+  };
+
+  // ── POOL ──
+  function getPool() {
+    return allFics.filter(f => {
+      if (f.status !== 'want') return false;
+      if (!f.complete) return false;
+      if (selectedSize !== 'all' && getCategory(f) !== selectedSize) return false;
+      if (selectedSerie === 'yes' && !f.series) return false;
+      if (selectedSerie === 'no' && f.series) return false;
+      return true;
+    });
+  }
+
+  function updatePoolInfo() {
+    const pool = getPool();
+    const el = document.getElementById('poolInfo');
+    const btn = document.getElementById('sortBtn');
+    if (pool.length === 0) {
+      el.textContent = 'Nenhuma fic encontrada com esses filtros.';
+      btn.disabled = true;
+    } else {
+      el.textContent = `${pool.length} fic${pool.length > 1 ? 's' : ''} disponíve${pool.length > 1 ? 'is' : 'l'} para sorteio`;
+      btn.disabled = false;
+    }
+  }
+
+  // ── SIZE FILTER ──
+  window.toggleSize = (btn) => {
+    selectedSize = btn.dataset.size;
+    document.querySelectorAll('#sizeChips .chip-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    updatePoolInfo();
+    document.getElementById('result').style.display = 'none';
+  };
+
+  // ── SERIE FILTER ──
+  window.setSerie = (val) => {
+    selectedSerie = val;
+    ['serieAll','serieYes','serieNo'].forEach(id => document.getElementById(id).classList.remove('active'));
+    document.getElementById(val === 'all' ? 'serieAll' : val === 'yes' ? 'serieYes' : 'serieNo').classList.add('active');
+    updatePoolInfo();
+    document.getElementById('result').style.display = 'none';
+  };
+
+  // ── SORTEAR ──
+  window.sortear = () => {
+    const pool = getPool();
+    if (pool.length === 0) return;
+    const fic = pool[Math.floor(Math.random() * pool.length)];
+    showResult(fic);
+  };
+
+  function showResult(fic) {
+    const cat = getCategory(fic);
+    const catColor = CAT_COLOR[cat] || 'var(--accent)';
+    const siteLabel = fic.site === 'ao3' ? 'AO3' : fic.site === 'wattpad' ? 'Wattpad' : 'Outro';
+    const spineClass = fic.site === 'ao3' ? 'spine-ao3' : fic.site === 'wattpad' ? 'spine-wattpad' : 'spine-other';
+
+    document.getElementById('resultSpine').className = `result-spine ${spineClass}`;
+
+    const titleEl = document.getElementById('resultTitle');
+    titleEl.innerHTML = fic.link
+      ? `<a href="${fic.link}" target="_blank" rel="noopener">${fic.title}</a>`
+      : fic.title;
+
+    const authorEl = document.getElementById('resultAuthor');
+    authorEl.innerHTML = fic.author ? `por <span>${fic.author}</span>` : '';
+
+    const seriesEl = document.getElementById('resultSeries');
+    if (fic.series) {
+      seriesEl.textContent = `📚 ${fic.series}${fic.seriesPart ? ` — Parte ${fic.seriesPart}` : ''}`;
+      seriesEl.style.display = 'block';
+    } else {
+      seriesEl.style.display = 'none';
+    }
+
+    const metaEl = document.getElementById('resultMeta');
+    metaEl.innerHTML = `
+      <span class="badge badge-${fic.site === 'ao3' ? 'ao3' : fic.site === 'wattpad' ? 'wattpad' : 'other'}">${siteLabel}</span>
+      <span class="badge badge-complete">Completa</span>
+      ${cat ? `<span class="badge-size" style="background:${catColor}22;color:${catColor}">${cat}</span>` : ''}
+      ${fic.chapters ? `<span style="font-size:0.78rem;color:var(--muted)">📖 ${fic.chapters}${fic.totalChapters ? '/'+fic.totalChapters : fic.totalChaptersUnknown ? '/?' : ''} cap.</span>` : ''}
+    `;
+
+    const wordsEl = document.getElementById('resultWords');
+    wordsEl.textContent = fic.wordCount
+      ? `✍️ ${Number(fic.wordCount).toLocaleString('pt-BR')} palavras${cat ? ` · ${cat}` : ''}`
+      : '';
+
+    const summaryEl = document.getElementById('resultSummary');
+    const summaryText = fic.miniSummary || fic.summary || '';
+    if (summaryText) {
+      summaryEl.textContent = summaryText;
+      summaryEl.style.display = 'block';
+    } else {
+      summaryEl.style.display = 'none';
+    }
+
+    const actionsEl = document.getElementById('resultActions');
+    actionsEl.innerHTML = `
+      ${fic.link ? `<a class="btn-link" href="${fic.link}" target="_blank" rel="noopener">🔗 Abrir fic</a>` : ''}
+      <button class="btn-resort" onclick="sortear()">🎲 Sortear outra</button>
+    `;
+
+    document.getElementById('result').style.display = 'block';
+    document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ── LOGIN ──
+  window.doLogin = async () => {
+    document.getElementById('loginMsg').textContent = 'Abrindo janela do Google...';
+    try {
+      await signInWithPopup(auth, new GoogleAuthProvider());
+    } catch (e) {
+      document.getElementById('loginMsg').textContent = 'Erro: ' + e.message;
+    }
+  };
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      document.getElementById('loginSection').style.display = 'none';
+      document.getElementById('appSection').style.display = 'block';
+      document.getElementById('poolInfo').textContent = 'Carregando fics...';
+
+      const snap = await getDocs(query(collection(db, 'fanfics'), where('userId', '==', user.uid)));
+      allFics = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      updatePoolInfo();
+    } else {
+      document.getElementById('loginSection').style.display = 'block';
+      document.getElementById('appSection').style.display = 'none';
+    }
+  });
+</script>
+</body>
+</html>
