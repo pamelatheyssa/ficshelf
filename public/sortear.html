@@ -13,31 +13,27 @@
       --border: rgba(90,110,90,0.18); --border-strong: rgba(90,110,90,0.28);
       --text: #2C3A2C; --text2: #4A5E4A; --muted: #7A917A;
       --accent: #5B7F5B; --accent-dark: #3D5C3D; --accent-light: rgba(91,127,91,0.12);
-      --rose: #C0607A; --blue: #4A7AA8; --gold: #A07830;
+      --blue: #4A7AA8; --blue-dark: #2D5C8A; --danger: #C0444A;
       --shadow: 0 4px 20px rgba(44,58,44,0.10);
       --shadow-lg: 0 8px 40px rgba(44,58,44,0.16);
       --radius: 14px; --font-d: 'Playfair Display', Georgia, serif; --font-b: 'Inter', sans-serif;
     }
     body { font-family: var(--font-b); background: var(--bg); color: var(--text); min-height: 100vh; }
 
-    /* HEADER */
     .header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; height: 58px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; box-shadow: 0 1px 6px rgba(44,58,44,0.07); }
     .header-logo { font-family: var(--font-d); font-size: 1.35rem; color: var(--accent); }
     .header-back { font-size: 0.82rem; color: var(--muted); text-decoration: none; border: 1px solid var(--border-strong); padding: 5px 12px; border-radius: 20px; transition: all 0.2s; }
     .header-back:hover { color: var(--accent); border-color: var(--accent); }
 
-    /* MAIN */
     .main { max-width: 680px; margin: 0 auto; padding: 32px 20px 60px; }
     h1 { font-family: var(--font-d); font-size: 1.8rem; color: var(--accent); margin-bottom: 6px; }
     .subtitle { font-size: 0.9rem; color: var(--muted); margin-bottom: 32px; font-style: italic; }
 
-    /* LOGIN */
     #loginSection { text-align: center; padding: 40px 0; }
     .btn-google { display: inline-flex; align-items: center; gap: 10px; background: #fff; color: #333; border: 1px solid #ccc; border-radius: 10px; padding: 12px 22px; font-family: var(--font-b); font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: all 0.2s; box-shadow: var(--shadow); }
     .btn-google:hover { box-shadow: var(--shadow-lg); transform: translateY(-1px); }
     .btn-google svg { width: 18px; height: 18px; }
 
-    /* FILTERS */
     .filters-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 24px; }
     .filters-card h2 { font-size: 0.95rem; font-weight: 600; color: var(--text2); margin-bottom: 16px; }
     .filter-row { display: flex; flex-direction: column; gap: 14px; }
@@ -48,8 +44,6 @@
     .chip-btn:hover { border-color: var(--accent); color: var(--text); }
     .chip-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
     .chip-btn.all-btn.active { background: var(--text2); border-color: var(--text2); }
-
-    /* SIZE CHIPS colors */
     .chip-curtissima.active { background: #4A9A6A; border-color: #4A9A6A; }
     .chip-curtinha.active   { background: #5B8FAA; border-color: #5B8FAA; }
     .chip-curta.active      { background: #6A7AAA; border-color: #6A7AAA; }
@@ -59,14 +53,12 @@
     .chip-longa.active      { background: #C05858; border-color: #C05858; }
     .chip-super.active      { background: #8B3A8B; border-color: #8B3A8B; }
 
-    /* SORT BUTTON */
     .sort-btn { width: 100%; padding: 16px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius); font-family: var(--font-d); font-size: 1.15rem; font-style: italic; cursor: pointer; transition: all 0.2s; margin-bottom: 28px; display: flex; align-items: center; justify-content: center; gap: 10px; }
     .sort-btn:hover:not(:disabled) { background: var(--accent-dark); transform: translateY(-2px); box-shadow: var(--shadow-lg); }
     .sort-btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .sort-btn .dice { font-size: 1.4rem; transition: transform 0.3s; }
     .sort-btn:not(:disabled):hover .dice { transform: rotate(180deg); }
 
-    /* RESULT */
     #result { display: none; }
     .result-label { font-size: 0.78rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
     .result-card { background: var(--surface2); border: 2px solid var(--accent); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-lg); animation: popIn 0.35s ease; }
@@ -87,28 +79,50 @@
     .badge-wattpad { background: rgba(74,122,168,0.12); color: #2D5C8A; }
     .badge-other { background: var(--accent-light); color: var(--accent-dark); }
     .badge-complete { background: rgba(74,122,90,0.12); color: #4A7A5A; }
+    .badge-device { background: var(--bg); color: var(--text2); }
+    .badge-downloaded { background: rgba(74,122,168,0.12); color: var(--blue-dark); }
     .badge-size { font-size: 0.72rem; font-weight: 600; padding: 3px 9px; border-radius: 20px; }
     .result-summary { font-size: 0.85rem; color: var(--text2); line-height: 1.6; padding: 10px 12px; background: var(--bg); border-radius: 8px; margin-bottom: 14px; font-style: italic; border-left: 3px solid var(--accent); }
     .result-series { font-size: 0.82rem; color: var(--accent); margin-bottom: 10px; font-style: italic; }
     .result-words { font-size: 0.8rem; color: var(--muted); margin-bottom: 16px; }
     .result-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    .btn-link { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-family: var(--font-b); font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.2s; }
-    .btn-link:hover { background: var(--accent-dark); }
-    .btn-resort { padding: 8px 16px; background: transparent; border: 1.5px solid var(--border-strong); color: var(--text2); border-radius: 8px; font-family: var(--font-b); font-size: 0.85rem; cursor: pointer; transition: all 0.2s; }
+
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 8px; font-family: var(--font-b); font-size: 0.85rem; font-weight: 600; cursor: pointer; text-decoration: none; transition: all 0.2s; border: 1.5px solid transparent; }
+    .btn:disabled { opacity: 0.5; cursor: wait; }
+    .btn-start { background: var(--accent); color: #fff; }
+    .btn-start:hover:not(:disabled) { background: var(--accent-dark); }
+    .btn-open { background: var(--blue); color: #fff; }
+    .btn-open:hover { background: var(--blue-dark); }
+    .btn-edit { background: transparent; border-color: var(--accent); color: var(--accent); }
+    .btn-edit:hover { background: var(--accent-light); }
+    .btn-resort { background: transparent; border-color: var(--border-strong); color: var(--text2); font-weight: 500; }
     .btn-resort:hover { border-color: var(--accent); color: var(--accent); }
 
-    /* COUNT */
+    .started-box { background: rgba(74,122,90,0.10); border: 1px solid rgba(74,122,90,0.35); border-radius: 10px; padding: 14px 16px; color: #3D5C3D; font-size: 0.9rem; line-height: 1.5; margin-bottom: 14px; }
+    .started-box strong { display: block; margin-bottom: 2px; }
+
     .pool-info { font-size: 0.8rem; color: var(--muted); text-align: center; margin-bottom: 16px; font-style: italic; }
-
-    /* EMPTY */
-    .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
-    .empty-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.5; }
-    .empty-text { font-size: 0.9rem; }
-
-    /* STATUS */
     .status-msg { font-size: 0.85rem; color: var(--muted); text-align: center; padding: 16px 0; }
 
-    @media (max-width: 480px) { .main { padding: 20px 16px 40px; } }
+    /* MODAL DE EDIÇÃO */
+    .modal-overlay { position: fixed; inset: 0; background: rgba(44,58,44,0.5); display: none; align-items: center; justify-content: center; z-index: 200; padding: 16px; backdrop-filter: blur(4px); }
+    .modal-overlay.open { display: flex; }
+    .modal { background: var(--surface); border: 1px solid var(--border-strong); border-radius: 16px; padding: 26px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow-lg); }
+    .modal h3 { font-family: var(--font-d); font-size: 1.25rem; color: var(--accent); margin-bottom: 18px; }
+    .fg { margin-bottom: 14px; }
+    .fg label.lbl { display: block; font-size: 0.82rem; color: var(--text2); margin-bottom: 5px; font-weight: 500; }
+    .fg input[type=text], .fg input[type=url], .fg input[type=number], .fg select, .fg textarea { width: 100%; background: var(--bg); border: 1px solid var(--border-strong); border-radius: 8px; color: var(--text); font-family: var(--font-b); font-size: 0.9rem; padding: 9px 12px; outline: none; }
+    .fg input:focus, .fg select:focus, .fg textarea:focus { border-color: var(--accent); }
+    .fg textarea { resize: vertical; min-height: 70px; }
+    .fg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .ck { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; cursor: pointer; padding: 6px 0; }
+    .ck input { width: 18px; height: 18px; accent-color: var(--accent); }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+    .btn-cancel { background: transparent; border: 1px solid var(--border-strong); color: var(--muted); }
+    .btn-cancel:hover { border-color: var(--accent); color: var(--accent); }
+    .modal-err { color: var(--danger); font-size: 0.82rem; margin-top: 8px; }
+
+    @media (max-width: 480px) { .main { padding: 20px 16px 40px; } .fg-row { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -122,7 +136,6 @@
   <h1>🎲 Sorteador de fanfics</h1>
   <p class="subtitle">Sorteia uma fic completa da sua lista "Quero ler"</p>
 
-  <!-- Login -->
   <div id="loginSection">
     <p style="color:var(--text2);margin-bottom:20px">Entre com sua conta Google do FicShelf para acessar suas fics:</p>
     <button class="btn-google" onclick="doLogin()">
@@ -132,31 +145,24 @@
     <p id="loginMsg" class="status-msg"></p>
   </div>
 
-  <!-- App (escondido até login) -->
   <div id="appSection" style="display:none">
-
-    <!-- Filtros -->
     <div class="filters-card">
       <h2>🎯 Filtros do sorteio</h2>
       <div class="filter-row">
-
-        <!-- Tamanho -->
         <div class="filter-group">
           <div class="filter-label">Tamanho (por palavras)</div>
           <div class="chips-row" id="sizeChips">
             <button class="chip-btn all-btn active" data-size="all" onclick="toggleSize(this)">Qualquer</button>
             <button class="chip-btn chip-curtissima" data-size="Curtíssima" onclick="toggleSize(this)">Curtíssima<br><span style="font-size:0.7rem;opacity:0.8">até 5k</span></button>
-            <button class="chip-btn chip-curtinha"   data-size="Curtinha"   onclick="toggleSize(this)">Curtinha<br><span style="font-size:0.7rem;opacity:0.8">5–10k</span></button>
-            <button class="chip-btn chip-curta"      data-size="Curta"      onclick="toggleSize(this)">Curta<br><span style="font-size:0.7rem;opacity:0.8">10–20k</span></button>
-            <button class="chip-btn chip-media"      data-size="Média"      onclick="toggleSize(this)">Média<br><span style="font-size:0.7rem;opacity:0.8">20–40k</span></button>
-            <button class="chip-btn chip-maismedia"  data-size="Mais da média" onclick="toggleSize(this)">Mais da média<br><span style="font-size:0.7rem;opacity:0.8">40–60k</span></button>
-            <button class="chip-btn chip-grande"     data-size="Grande"     onclick="toggleSize(this)">Grande<br><span style="font-size:0.7rem;opacity:0.8">60–100k</span></button>
-            <button class="chip-btn chip-longa"      data-size="Longa"      onclick="toggleSize(this)">Longa<br><span style="font-size:0.7rem;opacity:0.8">100–150k</span></button>
-            <button class="chip-btn chip-super"      data-size="Super longa" onclick="toggleSize(this)">Super longa<br><span style="font-size:0.7rem;opacity:0.8">150k+</span></button>
+            <button class="chip-btn chip-curtinha" data-size="Curtinha" onclick="toggleSize(this)">Curtinha<br><span style="font-size:0.7rem;opacity:0.8">5–10k</span></button>
+            <button class="chip-btn chip-curta" data-size="Curta" onclick="toggleSize(this)">Curta<br><span style="font-size:0.7rem;opacity:0.8">10–20k</span></button>
+            <button class="chip-btn chip-media" data-size="Média" onclick="toggleSize(this)">Média<br><span style="font-size:0.7rem;opacity:0.8">20–40k</span></button>
+            <button class="chip-btn chip-maismedia" data-size="Mais da média" onclick="toggleSize(this)">Mais da média<br><span style="font-size:0.7rem;opacity:0.8">40–60k</span></button>
+            <button class="chip-btn chip-grande" data-size="Grande" onclick="toggleSize(this)">Grande<br><span style="font-size:0.7rem;opacity:0.8">60–100k</span></button>
+            <button class="chip-btn chip-longa" data-size="Longa" onclick="toggleSize(this)">Longa<br><span style="font-size:0.7rem;opacity:0.8">100–150k</span></button>
+            <button class="chip-btn chip-super" data-size="Super longa" onclick="toggleSize(this)">Super longa<br><span style="font-size:0.7rem;opacity:0.8">150k+</span></button>
           </div>
         </div>
-
-        <!-- Série -->
         <div class="filter-group">
           <div class="filter-label">Série</div>
           <div class="chips-row">
@@ -165,7 +171,6 @@
             <button class="chip-btn" id="serieNo" onclick="setSerie('no')">📄 Sem série</button>
           </div>
         </div>
-
       </div>
     </div>
 
@@ -175,9 +180,9 @@
       <span class="dice">🎲</span> Sortear uma fic!
     </button>
 
-    <!-- Resultado -->
     <div id="result">
-      <div class="result-label">✨ Sua próxima leitura:</div>
+      <div class="result-label" id="resultLabel">✨ Sua próxima leitura:</div>
+      <div id="startedBox" class="started-box" style="display:none"></div>
       <div class="result-card" id="resultCard">
         <div class="result-spine" id="resultSpine"></div>
         <div class="result-body">
@@ -191,14 +196,53 @@
         </div>
       </div>
     </div>
-
   </div>
 </main>
+
+<!-- MODAL DE EDIÇÃO -->
+<div class="modal-overlay" id="editOverlay" onclick="if(event.target===this)closeEdit()">
+  <div class="modal">
+    <h3>✏️ Editar fanfic</h3>
+
+    <div class="fg"><label class="lbl">Nome da fanfic *</label>
+      <input type="text" id="eTitle"></div>
+
+    <div class="fg-row">
+      <div class="fg"><label class="lbl">Autor</label><input type="text" id="eAuthor"></div>
+      <div class="fg"><label class="lbl">Plataforma</label>
+        <select id="eSite"><option value="ao3">AO3</option><option value="wattpad">Wattpad</option><option value="other">Outro</option></select></div>
+    </div>
+
+    <div class="fg"><label class="lbl">Link</label><input type="url" id="eLink" placeholder="https://..."></div>
+
+    <div class="fg-row">
+      <div class="fg"><label class="lbl">Série</label><input type="text" id="eSeries"></div>
+      <div class="fg"><label class="lbl">Parte nº</label><input type="number" id="eSeriesPart" min="1"></div>
+    </div>
+
+    <div class="fg-row">
+      <div class="fg"><label class="lbl">Nº de palavras</label><input type="text" id="eWords" placeholder="ex: 17.162"></div>
+      <div class="fg"><label class="lbl">Leitura em</label>
+        <select id="ePhone"><option value="">Sem preferência</option><option value="phone">📱 Celular</option><option value="kindle">📕 Kindle</option></select></div>
+    </div>
+
+    <div class="fg"><label class="lbl">Mini resumo</label><textarea id="eMini"></textarea></div>
+
+    <label class="ck"><input type="checkbox" id="eComplete"> Obra completa</label>
+    <label class="ck"><input type="checkbox" id="eDownloaded"> ⬇️ Já baixada</label>
+
+    <p class="modal-err" id="eErr"></p>
+    <div class="modal-actions">
+      <button class="btn btn-cancel" onclick="closeEdit()">Cancelar</button>
+      <button class="btn btn-start" id="eSave" onclick="saveEdit()">Salvar</button>
+    </div>
+  </div>
+</div>
 
 <script type="module">
   import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
   import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
-  import { getFirestore, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+  import { getFirestore, collection, getDocs, query, where, doc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
   // ── COLE SUAS CHAVES AQUI ──
   const firebaseConfig = {
@@ -218,8 +262,18 @@
   let allFics = [];
   let selectedSize = 'all';
   let selectedSerie = 'all';
+  let currentFic = null;
 
-  // ── CATEGORY ──
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  function parseWords(value) {
+    if (!value && value !== 0) return null;
+    const str = String(value).trim().replace(/\s/g, '');
+    const norm = str.replace(/[.,](?=\d{3}(?:[.,]|$))/g, '').replace(',', '.');
+    const n = parseFloat(norm);
+    return isNaN(n) ? null : Math.round(n);
+  }
+
   function getCategory(fic) {
     const w = Number(fic.wordCount) || 0;
     if (w === 0) return null;
@@ -239,7 +293,6 @@
     'Longa': '#C05858', 'Super longa': '#8B3A8B',
   };
 
-  // ── POOL ──
   function getPool() {
     return allFics.filter(f => {
       if (f.status !== 'want') return false;
@@ -264,7 +317,6 @@
     }
   }
 
-  // ── SIZE FILTER ──
   window.toggleSize = (btn) => {
     selectedSize = btn.dataset.size;
     document.querySelectorAll('#sizeChips .chip-btn').forEach(b => b.classList.remove('active'));
@@ -273,7 +325,6 @@
     document.getElementById('result').style.display = 'none';
   };
 
-  // ── SERIE FILTER ──
   window.setSerie = (val) => {
     selectedSerie = val;
     ['serieAll','serieYes','serieNo'].forEach(id => document.getElementById(id).classList.remove('active'));
@@ -282,78 +333,170 @@
     document.getElementById('result').style.display = 'none';
   };
 
-  // ── SORTEAR ──
   window.sortear = () => {
     const pool = getPool();
     if (pool.length === 0) return;
-    const fic = pool[Math.floor(Math.random() * pool.length)];
-    showResult(fic);
+    showResult(pool[Math.floor(Math.random() * pool.length)]);
   };
 
+  function isPhone(f) { return f.preferPhone === true || f.readOn === 'phone'; }
+
   function showResult(fic) {
+    currentFic = fic;
     const cat = getCategory(fic);
-    const catColor = CAT_COLOR[cat] || 'var(--accent)';
-    const siteLabel = fic.site === 'ao3' ? 'AO3' : fic.site === 'wattpad' ? 'Wattpad' : 'Outro';
-    const spineClass = fic.site === 'ao3' ? 'spine-ao3' : fic.site === 'wattpad' ? 'spine-wattpad' : 'spine-other';
+    const catColor = CAT_COLOR[cat] || '#5B7F5B';
+    const siteKey = fic.site === 'ao3' ? 'ao3' : fic.site === 'wattpad' ? 'wattpad' : 'other';
+    const siteLabel = siteKey === 'ao3' ? 'AO3' : siteKey === 'wattpad' ? 'Wattpad' : 'Outro';
 
-    document.getElementById('resultSpine').className = `result-spine ${spineClass}`;
+    document.getElementById('startedBox').style.display = 'none';
+    document.getElementById('resultLabel').textContent = '✨ Sua próxima leitura:';
+    document.getElementById('resultSpine').className = `result-spine spine-${siteKey}`;
 
-    const titleEl = document.getElementById('resultTitle');
-    titleEl.innerHTML = fic.link
-      ? `<a href="${fic.link}" target="_blank" rel="noopener">${fic.title}</a>`
-      : fic.title;
+    document.getElementById('resultTitle').innerHTML = fic.link
+      ? `<a href="${esc(fic.link)}" target="_blank" rel="noopener">${esc(fic.title)}</a>`
+      : esc(fic.title);
 
-    const authorEl = document.getElementById('resultAuthor');
-    authorEl.innerHTML = fic.author ? `por <span>${fic.author}</span>` : '';
+    document.getElementById('resultAuthor').innerHTML = fic.author ? `por <span>${esc(fic.author)}</span>` : '';
 
     const seriesEl = document.getElementById('resultSeries');
     if (fic.series) {
       seriesEl.textContent = `📚 ${fic.series}${fic.seriesPart ? ` — Parte ${fic.seriesPart}` : ''}`;
       seriesEl.style.display = 'block';
-    } else {
-      seriesEl.style.display = 'none';
-    }
+    } else seriesEl.style.display = 'none';
 
-    const metaEl = document.getElementById('resultMeta');
-    metaEl.innerHTML = `
-      <span class="badge badge-${fic.site === 'ao3' ? 'ao3' : fic.site === 'wattpad' ? 'wattpad' : 'other'}">${siteLabel}</span>
+    const chap = fic.chapters
+      ? `<span style="font-size:0.78rem;color:var(--muted)">📖 ${esc(fic.chapters)}${fic.totalChapters ? '/' + esc(fic.totalChapters) : fic.totalChaptersUnknown ? '/?' : ''} cap.</span>` : '';
+    document.getElementById('resultMeta').innerHTML = `
+      <span class="badge badge-${siteKey}">${siteLabel}</span>
       <span class="badge badge-complete">Completa</span>
       ${cat ? `<span class="badge-size" style="background:${catColor}22;color:${catColor}">${cat}</span>` : ''}
-      ${fic.chapters ? `<span style="font-size:0.78rem;color:var(--muted)">📖 ${fic.chapters}${fic.totalChapters ? '/'+fic.totalChapters : fic.totalChaptersUnknown ? '/?' : ''} cap.</span>` : ''}
-    `;
+      ${isPhone(fic) ? '<span class="badge badge-device">📱 Celular</span>' : ''}
+      ${fic.downloaded ? '<span class="badge badge-downloaded">⬇️ Baixada</span>' : ''}
+      ${chap}`;
 
-    const wordsEl = document.getElementById('resultWords');
-    wordsEl.textContent = fic.wordCount
-      ? `✍️ ${Number(fic.wordCount).toLocaleString('pt-BR')} palavras${cat ? ` · ${cat}` : ''}`
-      : '';
+    document.getElementById('resultWords').textContent = fic.wordCount
+      ? `✍️ ${Number(fic.wordCount).toLocaleString('pt-BR')} palavras` : '';
 
     const summaryEl = document.getElementById('resultSummary');
     const summaryText = fic.miniSummary || fic.summary || '';
-    if (summaryText) {
-      summaryEl.textContent = summaryText;
-      summaryEl.style.display = 'block';
-    } else {
-      summaryEl.style.display = 'none';
-    }
+    if (summaryText) { summaryEl.textContent = summaryText; summaryEl.style.display = 'block'; }
+    else summaryEl.style.display = 'none';
 
-    const actionsEl = document.getElementById('resultActions');
-    actionsEl.innerHTML = `
-      ${fic.link ? `<a class="btn-link" href="${fic.link}" target="_blank" rel="noopener">🔗 Abrir fic</a>` : ''}
-      <button class="btn-resort" onclick="sortear()">🎲 Sortear outra</button>
-    `;
+    document.getElementById('resultActions').innerHTML = `
+      <button class="btn btn-start" id="startBtn" onclick="comecar()">▶️ Começar</button>
+      ${fic.link ? `<a class="btn btn-open" href="${esc(fic.link)}" target="_blank" rel="noopener">🔗 Abrir fic</a>` : ''}
+      <button class="btn btn-edit" onclick="openEdit()">✏️ Editar</button>
+      <button class="btn btn-resort" onclick="sortear()">🎲 Sortear outra</button>`;
 
     document.getElementById('result').style.display = 'block';
     document.getElementById('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  // ── COMEÇAR: move para "Lendo" ──
+  window.comecar = async () => {
+    if (!currentFic) return;
+    const btn = document.getElementById('startBtn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Movendo...';
+    try {
+      await updateDoc(doc(db, 'fanfics', currentFic.id), { status: 'reading' });
+      currentFic.status = 'reading';
+      updatePoolInfo();
+
+      document.getElementById('resultLabel').textContent = '📖 Boa leitura!';
+      const box = document.getElementById('startedBox');
+      box.innerHTML = `<strong>✅ Movida para "Lendo"</strong>"${esc(currentFic.title)}" já está na aba Lendo do FicShelf.`;
+      box.style.display = 'block';
+
+      document.getElementById('resultActions').innerHTML = `
+        ${currentFic.link ? `<a class="btn btn-open" href="${esc(currentFic.link)}" target="_blank" rel="noopener">🔗 Abrir fic</a>` : ''}
+        <button class="btn btn-edit" onclick="openEdit()">✏️ Editar</button>
+        <button class="btn btn-resort" onclick="sortear()">🎲 Sortear outra</button>`;
+    } catch (e) {
+      btn.disabled = false;
+      btn.textContent = '▶️ Começar';
+      alert('Não foi possível mover a fic: ' + e.message);
+    }
+  };
+
+  // ── EDITAR ──
+  window.openEdit = () => {
+    const f = currentFic;
+    if (!f) return;
+    document.getElementById('eTitle').value = f.title || '';
+    document.getElementById('eAuthor').value = f.author || '';
+    document.getElementById('eSite').value = f.site || 'ao3';
+    document.getElementById('eLink').value = f.link || '';
+    document.getElementById('eSeries').value = f.series || '';
+    document.getElementById('eSeriesPart').value = f.seriesPart || '';
+    document.getElementById('eWords').value = f.wordCount ? Number(f.wordCount).toLocaleString('pt-BR') : '';
+    document.getElementById('ePhone').value = isPhone(f) ? 'phone' : (f.preferPhone === false ? 'kindle' : '');
+    document.getElementById('eMini').value = f.miniSummary || '';
+    document.getElementById('eComplete').checked = !!f.complete;
+    document.getElementById('eDownloaded').checked = !!f.downloaded;
+    document.getElementById('eErr').textContent = '';
+    document.getElementById('editOverlay').classList.add('open');
+  };
+
+  window.closeEdit = () => document.getElementById('editOverlay').classList.remove('open');
+
+  window.saveEdit = async () => {
+    const title = document.getElementById('eTitle').value.trim();
+    const err = document.getElementById('eErr');
+    if (!title) { err.textContent = 'Informe o nome da fanfic.'; return; }
+
+    const wordsRaw = document.getElementById('eWords').value;
+    const words = parseWords(wordsRaw);
+    if (wordsRaw.trim() && words === null) { err.textContent = 'Número de palavras inválido.'; return; }
+
+    const phoneSel = document.getElementById('ePhone').value;
+    const data = {
+      title,
+      author: document.getElementById('eAuthor').value.trim(),
+      site: document.getElementById('eSite').value,
+      link: document.getElementById('eLink').value.trim(),
+      series: document.getElementById('eSeries').value.trim(),
+      seriesPart: document.getElementById('eSeriesPart').value,
+      wordCount: words,
+      preferPhone: phoneSel === 'phone' ? true : phoneSel === 'kindle' ? false : null,
+      miniSummary: document.getElementById('eMini').value.trim(),
+      complete: document.getElementById('eComplete').checked,
+      downloaded: document.getElementById('eDownloaded').checked,
+    };
+    // se o usuário escolheu kindle/celular manualmente, o campo antigo não deve contradizer
+    if (phoneSel !== 'phone') data.readOn = null;
+
+    const btn = document.getElementById('eSave');
+    btn.disabled = true; btn.textContent = 'Salvando...'; err.textContent = '';
+    try {
+      await updateDoc(doc(db, 'fanfics', currentFic.id), data);
+      Object.assign(currentFic, data);
+      closeEdit();
+      const wasStarted = currentFic.status === 'reading';
+      updatePoolInfo();
+      showResult(currentFic);
+      if (wasStarted) {
+        document.getElementById('resultLabel').textContent = '📖 Boa leitura!';
+        const box = document.getElementById('startedBox');
+        box.innerHTML = `<strong>✅ Movida para "Lendo"</strong>"${esc(currentFic.title)}" já está na aba Lendo do FicShelf.`;
+        box.style.display = 'block';
+        document.getElementById('resultActions').innerHTML = `
+          ${currentFic.link ? `<a class="btn btn-open" href="${esc(currentFic.link)}" target="_blank" rel="noopener">🔗 Abrir fic</a>` : ''}
+          <button class="btn btn-edit" onclick="openEdit()">✏️ Editar</button>
+          <button class="btn btn-resort" onclick="sortear()">🎲 Sortear outra</button>`;
+      }
+    } catch (e) {
+      err.textContent = 'Erro ao salvar: ' + e.message;
+    } finally {
+      btn.disabled = false; btn.textContent = 'Salvar';
+    }
+  };
+
   // ── LOGIN ──
   window.doLogin = async () => {
     document.getElementById('loginMsg').textContent = 'Abrindo janela do Google...';
-    try {
-      await signInWithPopup(auth, new GoogleAuthProvider());
-    } catch (e) {
-      document.getElementById('loginMsg').textContent = 'Erro: ' + e.message;
-    }
+    try { await signInWithPopup(auth, new GoogleAuthProvider()); }
+    catch (e) { document.getElementById('loginMsg').textContent = 'Erro: ' + e.message; }
   };
 
   onAuthStateChanged(auth, async (user) => {
@@ -361,7 +504,6 @@
       document.getElementById('loginSection').style.display = 'none';
       document.getElementById('appSection').style.display = 'block';
       document.getElementById('poolInfo').textContent = 'Carregando fics...';
-
       const snap = await getDocs(query(collection(db, 'fanfics'), where('userId', '==', user.uid)));
       allFics = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       updatePoolInfo();
